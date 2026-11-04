@@ -12,6 +12,7 @@
     if (api && !/^https?:$/.test(new URL(api, location.href).protocol)) api = '';
   } catch { api = ''; }
   api = api.replace(/\/+$/, '');
+  if (configured && api) document.documentElement.setAttribute('data-accounts', 'enabled');
 
   // 跨站登录态：Cookie 在 GitHub Pages → 函数计算这种跨站场景会被浏览器丢掉，
   // 所以会话同时以 Bearer token 的形式放在 localStorage，请求时带上。

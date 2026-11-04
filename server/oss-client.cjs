@@ -56,9 +56,9 @@ function endpointParts(endpoint) {
 function createOssClient({
   endpoint,
   bucket,
-  accessKeyId = process.env.OSS_ACCESS_KEY_ID,
-  accessKeySecret = process.env.OSS_ACCESS_KEY_SECRET,
-  securityToken = process.env.OSS_SECURITY_TOKEN,
+  accessKeyId = process.env.OSS_ACCESS_KEY_ID || process.env.ALIBABA_CLOUD_ACCESS_KEY_ID,
+  accessKeySecret = process.env.OSS_ACCESS_KEY_SECRET || process.env.ALIBABA_CLOUD_ACCESS_KEY_SECRET,
+  securityToken = process.env.OSS_SECURITY_TOKEN || process.env.ALIBABA_CLOUD_SECURITY_TOKEN,
   fetchImpl = globalThis.fetch,
   clock = Date.now,
   stsRoleName = process.env.OSS_STS_ROLE || 'framepick-api',

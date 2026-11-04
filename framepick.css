@@ -316,8 +316,8 @@ html[data-sfm="ranking"] #cinema,
 html[data-sfm="ranking"] #cinemaPlan,
 html[data-sfm="ranking"] #prototypeBar,
 html[data-sfm="ranking"] #meEntry,
-html[data-sfm="ranking"] #accountEntry,
 html[data-sfm="ranking"] #emptyMembership { display:none !important }
+html[data-sfm="ranking"]:not([data-accounts="enabled"]) #accountEntry { display:none !important }
 .load-more { display:flex;flex-direction:column;align-items:center;gap:12px;padding:22px 0 8px }
 .load-more p { font-size:12px;color:var(--muted);margin:0 }
 .load-more .button { min-width:176px;justify-content:center }

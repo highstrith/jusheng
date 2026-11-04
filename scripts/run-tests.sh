@@ -44,6 +44,7 @@ node --test tests/framepick-accounts-integration.mjs
 node --test tests/framepick-orders-integration.mjs
 node --test tests/framepick-viewing-integration.mjs
 node --test tests/framepick-api-integration.mjs
+node --test tests/oss-client-fc-test.mjs
 node --test tests/framepick-discovery-integration.mjs
 node --test tests/framepick-publish-rules-test.mjs
 node --test tests/framepick-creators-integration.mjs

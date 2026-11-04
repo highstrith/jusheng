@@ -89,6 +89,17 @@ class OssCovers(unittest.TestCase):
         expect(self.page.locator('#detailImage')).to_have_attribute('src', OSS + 'pinzi-1280w.webp')
         self.assertTrue(all(url.startswith(OSS) for url in self.requests), self.requests)
 
+    def test_ranking_site_exposes_login_when_an_account_service_is_configured(self):
+        self.context.add_init_script('window.FRAMEPICK_ACCOUNT_API="https://accounts.test/api/framepick";')
+        self.context.route('https://accounts.test/**', lambda route: route.fulfill(
+            status=200, content_type='application/json', headers={'Access-Control-Allow-Origin': '*'},
+            body='{"signedIn":false,"account":null}'))
+        self.page.goto(self.base, wait_until='load')
+        expect(self.page.locator('#accountEntry')).to_be_visible()
+        self.page.locator('#accountEntry').click()
+        expect(self.page.locator('#accountDialog')).to_be_visible()
+        expect(self.page.locator('#accountEmail')).to_be_visible()
+
     def test_saved_relative_and_old_pages_covers_are_migrated_on_display(self):
         posters = ['img/xianggu-640w.webp',
             'https://highstrith.github.io/jusheng/img/pinzi-640w.webp',
