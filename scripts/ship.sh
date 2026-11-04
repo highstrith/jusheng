@@ -1,6 +1,9 @@
 #!/bin/bash
-# 橘生梦厂「一条命令上线」：取封面 → 转图 → 上传 OSS → 重建页面 → 校验 → 测试
+# 橘生梦厂「一条命令上线」：取封面 → 转图 → 重建页面 → 校验 → 测试
 #                              → 构建 public/ → 推 main → 等部署 → 线上复核。
+#
+# 封面跟站点一起放在 GitHub Pages 上（页面里就是 img/xxx.webp 相对路径），
+# 不走 OSS，所以这里不需要任何云端凭据。
 #
 #   scripts/ship.sh "第三批 5 部上架"            全流程（含浏览器测试）
 #   scripts/ship.sh "第三批 5 部上架" --fast     跳过浏览器测试，只跑校验
@@ -11,9 +14,7 @@
 # https://highstrith.github.io/jusheng/ 。作品集是另一个仓库（highstrithstate），
 # 与这里无关，不再由本脚本一并发布。
 #
-# 一次性准备：
-#   1. ~/bin/ossutil config   写入 ~/.ossutilconfig（endpoint oss-cn-hangzhou.aliyuncs.com）
-#   2. ego-browser 保持登录抖音，仅 --with-douyin 时需要
+# 一次性准备：ego-browser 保持登录抖音，仅 --with-douyin 时需要
 set -uo pipefail
 cd "$(dirname "$0")/.." || exit 2
 
@@ -37,52 +38,30 @@ done
 step() { printf '\n\033[1m▸ %s\033[0m\n' "$1"; }
 fail() { printf '\033[31m✗ %s\033[0m\n' "$1" >&2; exit 1; }
 
-step "0/7 检查环境"
+step "0/6 检查环境"
 command -v node >/dev/null || fail "找不到 node"
-if [ "$PUSH" = "1" ] && [ ! -f "$HOME/.ossutilconfig" ]; then
-  fail "还没配 ossutil 凭据：先跑 ~/bin/ossutil config（endpoint: oss-cn-hangzhou.aliyuncs.com）"
-fi
 echo "  工作目录 $(pwd)"
 
 if [ "$WITH_DOUYIN" = "1" ]; then
-  step "1/7 刷新抖音封面（登录态浏览器）"
+  step "1/6 刷新抖音封面（登录态浏览器）"
   if ego-browser nodejs < scripts/framepick-cover-douyin.js; then
     echo "  抖音封面已刷新"
   else
     echo "  ! 抖音封面抓取失败（多半是没登录），沿用已有封面继续"
   fi
 else
-  step "1/7 刷新抖音封面 — 跳过（需要时加 --with-douyin）"
+  step "1/6 刷新抖音封面 — 跳过（需要时加 --with-douyin）"
 fi
 
-step "2/7 取封面并转 640w webp"
+step "2/6 取封面并转 640w webp"
 node scripts/framepick-cover-build.mjs || fail "封面构建失败，见上面的 ✗ 行"
 
-if [ "$PUSH" = "1" ]; then
-  step "3/7 上传封面到 OSS"
-  find img -name '._*' -type f -delete 2>/dev/null
-  "$HOME/bin/ossutil" cp -r --update --jobs 4 \
-    --include "*.webp" --exclude "._*" \
-    --meta "Cache-Control:public,max-age=600" \
-    img/ oss://highstrith-assets/reel/img/ 2>&1 | tail -3 || fail "上传失败"
-  step "3b/7 线上封面自检"
-  BAD=0
-  for file in img/*.webp; do
-    name=$(basename "$file")
-    code=$(curl -s -o /dev/null -w '%{http_code}' -I "https://highstrith-assets.oss-cn-hangzhou.aliyuncs.com/reel/img/$name")
-    [ "$code" = "200" ] || { echo "  $code $name"; BAD=$((BAD+1)); }
-  done
-  [ "$BAD" -eq 0 ] && echo "  全部 200" || fail "有 $BAD 张封面在 OSS 上不可访问，先别部署"
-else
-  step "3/7 上传 OSS — 跳过（--no-push）"
-fi
-
-step "4/7 重建页面并校验"
+step "3/6 重建页面并校验"
 node scripts/build-framepick-library.mjs || fail "页面重建失败"
 node scripts/check-framepick-library.mjs || fail "卡片校验未通过"
 
 if [ "$FAST" = "0" ]; then
-  step "5/7 全量测试（约 2 分钟）"
+  step "4/6 全量测试（约 2 分钟）"
   ./scripts/run-tests.sh > /tmp/jusheng-ship-tests.log 2>&1
   if [ $? -eq 0 ]; then
     grep -E '^Ran |^OK' /tmp/jusheng-ship-tests.log | tail -2
@@ -91,19 +70,19 @@ if [ "$FAST" = "0" ]; then
     fail "测试未通过，日志在 /tmp/jusheng-ship-tests.log"
   fi
 else
-  step "5/7 全量测试 — 跳过（--fast）"
+  step "4/6 全量测试 — 跳过（--fast）"
 fi
 
-step "6/7 构建 public/ 并检查产物"
+step "5/6 构建 public/ 并检查产物"
 ./scripts/build-site.sh || fail "产物构建失败"
 
 if [ "$PUSH" = "0" ]; then
-  step "7/7 提交推送 — 跳过（--no-push）"
+  step "6/6 提交推送 — 跳过（--no-push）"
   printf '\n\033[32m本地已完成\033[0m\n'
   exit 0
 fi
 
-step "7/7 提交、推送、等部署、复核线上"
+step "6/6 提交、推送、等部署、复核线上"
 if git diff --quiet && git diff --cached --quiet; then
   echo "  没有文件改动，跳过提交"
   PUSHED=0
