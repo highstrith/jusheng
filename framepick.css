@@ -318,7 +318,7 @@ html[data-sfm="ranking"] #prototypeBar,
 html[data-sfm="ranking"] #meEntry,
 html[data-sfm="ranking"] #accountEntry,
 html[data-sfm="ranking"] #emptyMembership { display:none !important }
-.load-more { display:flex;flex-direction:column;align-items:center;gap:14px;padding:34px 0 8px }
+.load-more { display:flex;flex-direction:column;align-items:center;gap:12px;padding:22px 0 8px }
 .load-more p { font-size:12px;color:var(--muted);margin:0 }
 .load-more .button { min-width:176px;justify-content:center }
 
@@ -328,6 +328,8 @@ html[data-sfm="ranking"] #emptyMembership { display:none !important }
 .lib-head .lede { color:var(--body);font-size:13px;line-height:1.9;max-width:58ch }
 .lib-empty { padding:46px 0;color:var(--body);font-size:13px;text-align:center }
 .pager { display:flex;flex-wrap:wrap;gap:8px;justify-content:center;padding:36px 0 8px }
+.pager-top { padding:0 0 24px;justify-content:flex-start }
+.pager[hidden] { display:none }
 .pager button { min-width:38px;height:38px;padding:0 12px;border:1px solid var(--line);background:transparent;color:var(--body);font-size:13px;border-radius:6px }
 .pager button:hover:not(:disabled) { color:var(--text);border-color:var(--muted) }
 .pager button[aria-current="page"] { background:var(--text);color:var(--bg);border-color:var(--text) }

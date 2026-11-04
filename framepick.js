@@ -26,6 +26,8 @@
     };
   });
   const byId = new Map(films.map((film) => [film.id, film]));
+  // 页面上的「N 部筛过的短片」跟着数据走，作品增减时不必再手改文案。
+  for (const node of document.querySelectorAll('[data-film-total]')) node.textContent = String(films.length);
   // A film is watched where its author published it, so the labels follow the card.
   const SOURCE_LABEL = { douyin: '抖音', xiaohongshu: '小红书', bilibili: '哔哩哔哩' };
   const CATEGORY_LABEL = { film: '完整电影', series: '系列短剧', short: '剧情短片', ad: '商业广告', music: '音乐影像', experimental: '实验影像' };
@@ -33,10 +35,10 @@
     q: $('#filmSearch'), genre: $('#genreFilter'), source: $('#sourceFilter'),
     rating: $('#scoreFilter'), access: $('#accessFilter'), sort: $('#sortFilter'), scoreBasis: $('#scoreBasis')
   };
-  // 首页只铺一屏能看完的量，其余走「加载更多」；否则作品上千时页面会极长。
+  // 首页按页给：手机 6 部、桌面 12 部，一页一屏，作品再多也不拖成长条。
   const PAGE_QUERY = '(max-width: 760px)';
   function pageSize() { return matchMedia(PAGE_QUERY).matches ? 6 : 12; }
-  const defaults = { q: '', category: 'all', genre: 'all', source: 'all', rating: 'all', access: 'all', sort: 'curated', scoreBasis: 'editor', saved: false, hideWatched: true, limit: 12 };
+  const defaults = { q: '', category: 'all', genre: 'all', source: 'all', rating: 'all', access: 'all', sort: 'curated', scoreBasis: 'editor', saved: false, hideWatched: true, limit: 12, page: 1 };
   const categories = [...document.querySelectorAll('[data-category]')].filter((node) => node.tagName === 'BUTTON');
   const storageKey = 'framepick:saved:v1';
   let storageAvailable = true;
@@ -46,6 +48,7 @@
     if (Array.isArray(parsed)) saved = new Set(parsed.filter((id) => typeof id === 'string' && byId.has(id)));
   } catch { storageAvailable = false; }
   let state = { ...defaults };
+  let lastVisible = [];
   let currentFilm = null;
   let opener = null;
   let noticeTimer;
@@ -63,6 +66,8 @@
     // ?perPage=all 一次铺开全部，给「查看全部」链接和自动化测试用。
     const all = params.get('perPage') === 'all';
     state = { ...defaults, limit: all ? Infinity : pageSize(), q: (params.get('q') || '').slice(0, 100), saved: params.get('saved') === '1', hideWatched: params.get('hideWatched') !== '0' };
+    const page = Number(params.get('page'));
+    if (Number.isFinite(page) && page >= 1) state.page = Math.floor(page);
     const category = params.get('category');
     if (categories.some((button) => button.dataset.category === category)) state.category = category;
     for (const key of ['genre', 'source', 'rating', 'access', 'sort', 'scoreBasis']) {
@@ -75,6 +80,8 @@
   function writeState() {
     const url = new URL(location.href);
     for (const key of Object.keys(defaults)) {
+      // limit 由 perPage 决定，不往地址里写；页码才是要分享的状态。
+      if (key === 'limit') continue;
       const value = state[key];
       if (value === defaults[key]) url.searchParams.delete(key);
       else url.searchParams.set(key, key === 'saved' ? '1' : key === 'hideWatched' ? '0' : value);
@@ -148,9 +155,15 @@
     );
     if (state.sort === 'score') visible.sort((a, b) => (selectedScore(b) ?? -1) - (selectedScore(a) ?? -1) || a.index - b.index);
     if (state.sort === 'newest') visible.sort((a, b) => b.date.localeCompare(a.date) || a.index - b.index);
-    // 搜索是一次性意图，直接把匹配的给全；普通浏览按页给，避免首页过长。
-    const cap = query ? visible.length : Math.min(state.limit, visible.length);
-    const shown = visible.slice(0, cap);
+    // 搜索是一次性意图，直接把匹配的给全；普通浏览按页给，一页一屏。
+    const total = visible.length;
+    const paged = !query && Number.isFinite(state.limit);
+    const perPage = paged ? state.limit : total;
+    const lastPage = paged ? Math.max(1, Math.ceil(total / perPage)) : 1;
+    state.page = Math.min(Math.max(1, state.page), lastPage);
+    const start = paged ? (state.page - 1) * perPage : 0;
+    const shown = paged ? visible.slice(start, start + perPage) : visible.slice();
+    lastVisible = visible.map((film) => film.id);
     const ids = new Set(shown.map((film) => film.id));
     for (const film of films) film.card.hidden = !ids.has(film.id);
     const ordered = [...shown, ...films.filter((film) => !ids.has(film.id))];
@@ -166,18 +179,21 @@
       (!state.saved || saved.has(film.id));
     const matchingExceptWatched = state.hideWatched ? films.filter((film) => passesOtherFilters(film) && watchedIds.has(film.id)) : [];
     const hiddenWatched = matchingExceptWatched.length;
-    const total = visible.length;
     const suffix = state.saved ? '已收藏作品' : '精选作品';
-    const countText = !query && total > cap ? `共 ${total} 部${suffix} · 显示前 ${cap} 部` : `${total} 部${suffix}`;
+    const range = shown.length ? `第 ${start + 1}–${start + shown.length} 部` : '';
+    const countText = paged && lastPage > 1
+      ? `共 ${total} 部${suffix} · ${range} · 第 ${state.page} / ${lastPage} 页`
+      : `${total} 部${suffix}`;
     $('#resultCount').textContent = countText + (state.hideWatched && hiddenWatched ? ` · 已隐藏 ${hiddenWatched} 部已看` : '');
     $('#emptyState').hidden = total !== 0;
     $('#emptyMembership').hidden = state.access !== 'paid';
-    const remaining = query ? 0 : total - cap;
-    $('#loadMore').hidden = remaining <= 0;
-    if (remaining > 0) {
-      $('#loadMoreNote').textContent = `这里显示最近更新的 ${cap} 部`;
+    renderPager(lastPage);
+    const loadMore = $('#loadMore');
+    if (loadMore) loadMore.hidden = Boolean(query) || state.limit === Infinity;
+    if (loadMore && !loadMore.hidden) {
+      $('#loadMoreNote').textContent = '片库里还能按题材、来源、评分再筛一遍。';
       const link = $('#loadMoreLink');
-      if (link) link.textContent = `查看全部 ${total} 部`;
+      if (link) link.textContent = `去片库看全部 ${total} 部`;
     }
     let title = '暂时没有匹配的作品';
     let copy = '试试其他题材，或清除筛选条件。';
@@ -203,7 +219,46 @@
     syncWatchedBadges();
   }
 
-  function applyFilters(resetLimit = true) { if (resetLimit && state.limit !== Infinity) state.limit = pageSize(); syncControls(); render(); writeState(); }
+  // 页码超过 7 个就折成省略号，作品再多翻页条也不会横向撑爆。
+  function pageList(current, last) {
+    if (last <= 7) return Array.from({ length: last }, (_, index) => index + 1);
+    const pages = new Set([1, last, current, current - 1, current + 1]);
+    const sorted = [...pages].filter((page) => page >= 1 && page <= last).sort((a, b) => a - b);
+    const result = [];
+    for (let index = 0; index < sorted.length; index += 1) {
+      if (index && sorted[index] - sorted[index - 1] > 1) result.push('…');
+      result.push(sorted[index]);
+    }
+    return result;
+  }
+
+  function renderPager(lastPage) {
+    const pager = $('#filmPager');
+    if (!pager) return;
+    if (lastPage <= 1) { pager.innerHTML = ''; pager.hidden = true; return; }
+    pager.hidden = false;
+    const buttons = [`<button type="button" data-page="${state.page - 1}"${state.page === 1 ? ' disabled' : ''}>上一页</button>`];
+    for (const page of pageList(state.page, lastPage)) {
+      buttons.push(page === '…'
+        ? '<span class="pager-gap" aria-hidden="true">…</span>'
+        : `<button type="button" data-page="${page}"${page === state.page ? ' aria-current="page"' : ''}>${page}</button>`);
+    }
+    buttons.push(`<button type="button" data-page="${state.page + 1}"${state.page === lastPage ? ' disabled' : ''}>下一页</button>`);
+    pager.innerHTML = buttons.join('');
+  }
+
+  function scrollToList() {
+    const anchor = $('.library-controls') || grid;
+    anchor.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth', block: 'start' });
+  }
+
+  function applyFilters(resetLimit = true) {
+    if (resetLimit && state.limit !== Infinity) state.limit = pageSize();
+    state.page = 1;
+    syncControls();
+    render();
+    writeState();
+  }
 
   function viewingSnapshot(film) {
     return {
@@ -328,11 +383,10 @@
     render();
     const id = new URL(location.href).searchParams.get('film');
     if (!byId.has(id)) { closeFilmUI(); return; }
-    // 深链进来的作品可能排在「加载更多」之后，先把它展开再打开。
-    const card = byId.get(id).card;
-    if (card.hidden) {
-      const pos = [...grid.children].indexOf(card);
-      if (pos >= state.limit) { state.limit = pos + 1; render(); }
+    // 深链进来的作品可能排在别的页，先翻到它那一页再打开。
+    if (byId.get(id).card.hidden && Number.isFinite(state.limit) && !state.q.trim()) {
+      const index = lastVisible.indexOf(id);
+      if (index >= 0) { state.page = Math.floor(index / state.limit) + 1; render(); }
     }
     openFilm(id);
   }
@@ -346,6 +400,22 @@
   for (const button of categories) button.addEventListener('click', () => {
     state.category = button.dataset.category;
     applyFilters();
+  });
+  const filmPager = $('#filmPager');
+  if (filmPager) filmPager.addEventListener('click', (event) => {
+    const button = event.target.closest('button[data-page]');
+    if (!button || button.disabled) return;
+    state.page = Number(button.dataset.page);
+    render();
+    writeState();
+    scrollToList();
+  });
+  // 跨过手机／桌面断点时每页数量变了，回到第一页重排，免得停在越界页。
+  matchMedia(PAGE_QUERY).addEventListener('change', () => {
+    if (state.limit === Infinity) return;
+    state.limit = pageSize();
+    state.page = 1;
+    render();
   });
   $('#savedToggle').addEventListener('click', () => {
     state.saved = !state.saved;

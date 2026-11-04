@@ -4,6 +4,7 @@
   const films = Array.isArray(window.FRAMEPICK_FILMS) ? window.FRAMEPICK_FILMS : [];
   const grid = document.getElementById('libGrid');
   const pager = document.getElementById('libPager');
+  const pagerTop = document.getElementById('libPagerTop');
   const count = document.getElementById('libCount');
   const empty = document.getElementById('libEmpty');
   const meta = document.getElementById('libMeta');
@@ -11,7 +12,9 @@
   const note = document.getElementById('libNote');
   if (!grid) return;
 
-  const PER_PAGE = 24;
+  // 一页一屏：手机 6 部、桌面 12 部，翻页条上下各一条，不用滚到底才看得到页码。
+  const PAGE_QUERY = '(max-width: 760px)';
+  function perPage() { return matchMedia(PAGE_QUERY).matches ? 6 : 12; }
   const GENRE_LABELS = { fantasy: '奇幻', scifi: '科幻', wuxia: '武侠', xianxia: '仙侠', urban: '都市', romance: '情感', healing: '治愈', thriller: '悬疑' };
   const SOURCE_LABELS = { xiaohongshu: '小红书', douyin: '抖音', bilibili: '哔哩哔哩' };
   const CATEGORY_LABELS = { film: '完整电影', series: '系列短剧', short: '剧情短片', ad: '商业广告', music: '音乐影像', experimental: '实验影像' };
@@ -82,7 +85,7 @@
   }
 
   function renderPager(lastPage) {
-    if (lastPage <= 1) { pager.innerHTML = ''; return; }
+    if (lastPage <= 1) { pager.innerHTML = ''; if (pagerTop) pagerTop.innerHTML = ''; return; }
     const buttons = [`<button type="button" data-page="${state.page - 1}"${state.page === 1 ? ' disabled' : ''}>上一页</button>`];
     for (const page of pageList(state.page, lastPage)) {
       buttons.push(page === '…'
@@ -90,7 +93,9 @@
         : `<button type="button" data-page="${page}"${page === state.page ? ' aria-current="page"' : ''}>${page}</button>`);
     }
     buttons.push(`<button type="button" data-page="${state.page + 1}"${state.page === lastPage ? ' disabled' : ''}>下一页</button>`);
-    pager.innerHTML = buttons.join('');
+    const markup = buttons.join('');
+    pager.innerHTML = markup;
+    if (pagerTop) pagerTop.innerHTML = markup;
   }
 
   function render() {
@@ -105,10 +110,11 @@
     if (state.sort === 'newest') visible = [...visible].sort((a, b) => String(b.intakeDate).localeCompare(String(a.intakeDate)));
     if (state.sort === 'longest') visible = [...visible].sort((a, b) => seconds(b.runtime) - seconds(a.runtime));
 
-    const lastPage = Math.max(1, Math.ceil(visible.length / PER_PAGE));
+    const size = perPage();
+    const lastPage = Math.max(1, Math.ceil(visible.length / size));
     if (state.page > lastPage) state.page = lastPage;
-    const start = (state.page - 1) * PER_PAGE;
-    const pageFilms = visible.slice(start, start + PER_PAGE);
+    const start = (state.page - 1) * size;
+    const pageFilms = visible.slice(start, start + size);
 
     grid.innerHTML = pageFilms.map(card).join('');
     empty.hidden = visible.length !== 0;
@@ -117,7 +123,7 @@
     const range = visible.length
       ? `第 ${start + 1}–${start + pageFilms.length} 部，共 ${visible.length} 部`
       : '没有匹配的作品';
-    count.textContent = range + (visible.length > PER_PAGE ? ` · 第 ${state.page} / ${lastPage} 页` : '');
+    count.textContent = range + (visible.length > size ? ` · 第 ${state.page} / ${lastPage} 页` : '');
     note.textContent = `已收录 ${films.length} 部 · 正式评分陆续补充`;
     meta.textContent = `共 ${films.length} 部 · 每周更新`;
   }
@@ -134,7 +140,14 @@
       if (!button || button.disabled) return;
       state.page = Number(button.dataset.page);
       render();
-      grid.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth', block: 'start' });
+      count.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth', block: 'start' });
+    });
+    if (pagerTop) pagerTop.addEventListener('click', (event) => {
+      const button = event.target.closest('button[data-page]');
+      if (!button || button.disabled) return;
+      state.page = Number(button.dataset.page);
+      render();
+      count.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth', block: 'start' });
     });
   }
 
@@ -152,15 +165,20 @@
   bind();
   render();
 
-  // URL 里的筛选条件可以直接带进来，方便分享某类片单。
+  // URL 里的筛选条件可以直接带进来，方便分享某类片单或某一页。
   const params = new URL(location.href).searchParams;
   const preset = { q: params.get('q') || '', genre: params.get('genre') || 'all', source: params.get('source') || 'all', category: params.get('category') || 'all' };
-  if (preset.q || preset.genre !== 'all' || preset.source !== 'all' || preset.category !== 'all') {
-    Object.assign(state, preset, { page: 1 });
+  const presetPage = Number(params.get('page'));
+  const page = Number.isFinite(presetPage) && presetPage >= 1 ? Math.floor(presetPage) : 1;
+  if (preset.q || preset.genre !== 'all' || preset.source !== 'all' || preset.category !== 'all' || page > 1) {
+    Object.assign(state, preset, { page });
     document.getElementById('libSearch').value = preset.q;
     document.getElementById('libGenre').value = preset.genre;
     document.getElementById('libSource').value = preset.source;
     for (const node of tabs.querySelectorAll('button')) node.setAttribute('aria-pressed', String(node.dataset.category === preset.category));
     render();
   }
+
+  // 跨过手机／桌面断点时每页数量变了，回到第一页重排。
+  matchMedia(PAGE_QUERY).addEventListener('change', () => { state.page = 1; render(); });
 })();

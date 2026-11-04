@@ -81,26 +81,37 @@ class FramepickLibrary(unittest.TestCase):
         expect(self.cards()).to_have_count(total)
 
     def test_home_stays_one_screen_and_links_to_the_full_library(self):
-        # 作品会持续增长，首页只铺一屏，完整列表去 library.html，否则上千部时页面长到无法浏览。
+        # 作品会持续增长，首页一页一屏并带页码，完整列表另有 library.html。
         self.open_paged()
         total = self.page.locator('#filmGrid [data-film]').count()
-        self.assertEqual(self.cards().count(), 12, '首屏只铺 12 部')
-        expect(self.page.locator('#resultCount')).to_contain_text('显示前 12 部')
+        self.assertEqual(self.cards().count(), 12, '首页每页 12 部')
+        expect(self.page.locator('#resultCount')).to_contain_text('第 1–12 部')
+        expect(self.page.locator('#filmPager')).to_be_visible()
         expect(self.page.locator('#loadMore')).to_be_visible()
         link = self.page.locator('#loadMoreLink')
         expect(link).to_have_attribute('href', 'library.html')
-        expect(link).to_contain_text(f'查看全部 {total} 部')
+        expect(link).to_contain_text(f'去片库看全部 {total} 部')
 
-        link.click()
-        self.page.wait_for_load_state('load')
-        self.assertTrue(self.page.url.endswith('/library.html'), self.page.url)
+        # 首页翻页：第二页换一批作品，且不重复第一页。
+        first_ids = self.cards().evaluate_all('cards=>cards.map(c=>c.dataset.film)')
+        self.page.locator('#filmPager button', has_text='2').first.click()
+        second_ids = self.cards().evaluate_all('cards=>cards.map(c=>c.dataset.film)')
+        self.assertEqual(len(set(first_ids) & set(second_ids)), 0, '翻页后不该重复第一页的作品')
+        expect(self.page.locator('#resultCount')).to_contain_text('第 2 / ')
+
+        # 换筛选条件后回到第一页，避免停在越界页。
+        self.page.locator('#genreFilter').select_option('scifi')
+        self.assertNotIn('第 2 /', self.page.locator('#resultCount').text_content())
+
+        self.page.goto(BASE + fp.url('library.html'), wait_until='load')
         expect(self.page.locator('#libTitle')).to_contain_text('全部作品')
         expect(self.page.locator('#libMeta')).to_contain_text(f'共 {total} 部')
         expect(self.page.locator('#libCount')).to_contain_text(f'共 {total} 部')
         first_page = self.page.locator('#libGrid .card').count()
-        self.assertLessEqual(first_page, 24, '片库页每页 24 部')
-        if total > 24:
-            self.page.get_by_role('button', name='2', exact=True).click()
+        self.assertLessEqual(first_page, 12, '片库页每页不超过 12 部')
+        expect(self.page.locator('#libPagerTop')).to_be_visible()
+        if total > 12:
+            self.page.locator('#libPagerTop button', has_text='2').first.click()
             self.assertGreater(self.page.locator('#libGrid .card').count(), 0)
             expect(self.page.locator('#libCount')).to_contain_text('第 2 / ')
         # 筛选后页码回到第一页，避免停在越界页。
