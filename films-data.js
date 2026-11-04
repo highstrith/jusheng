@@ -939,5 +939,35 @@ window.FRAMEPICK_FILMS = [
     "statusLabel": "单部",
     "intakeDate": "2026-11-03",
     "published": "2026-11-02"
+  },
+  {
+    "id": "helong",
+    "title": "合龙",
+    "kind": "ai",
+    "genres": [
+      "fantasy"
+    ],
+    "category": "short",
+    "source": "douyin",
+    "sourceLabel": "抖音",
+    "access": "free",
+    "badge": "免费精选",
+    "runtime": "17:08",
+    "author": "2XLabs",
+    "description": "少女阿渔听河豚精六郎说，河对岸有一位跟她长得很像的「姨姨」。一条大河把血亲隔在两岸，河中鼍王不许百姓造桥。阿渔央求会造桥的石明和摆渡的清水婆婆联手，众人合力斩杀鼍王、两岸各修半座桥，最后在江心接上。",
+    "recommendation": "一座被劈成两半的桥，两岸各修一半，靠一次渡江把它接上。全片看不出是 AI 做的，适合当第一部。",
+    "cover": "img/helong-640w.webp",
+    "coverWidth": 640,
+    "coverHeight": 480,
+    "coverAlt": "《合龙》原片封面",
+    "coverNote": "原片封面",
+    "sourceUrl": "https://www.douyin.com/video/7676103932166425919",
+    "watchLabel": "前往抖音",
+    "score": null,
+    "scoreText": "待评",
+    "completion": "standalone",
+    "statusLabel": "单部",
+    "intakeDate": "2026-11-04",
+    "published": "2026-08-20"
   }
 ];

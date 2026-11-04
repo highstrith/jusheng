@@ -55,15 +55,15 @@ class FramepickPicks(unittest.TestCase):
         links = self.page.locator('#rankings [data-open-film]')
         expect(links).to_have_count(5)
         self.assertEqual(links.evaluate_all('(nodes)=>nodes.map(n=>n.dataset.openFilm)'),
-                         ['baizhou', 'yagaoheshuaya', 'xingchendao', 'huanshoujinmen', 'yabiao'])
+                         ['helong', 'baizhou', 'xingchendao', 'yagaoheshuaya', 'pinzi'])
         self.page.evaluate("window.dispatchEvent(new CustomEvent('framepick:review-summary', {detail:{available:false,films:[]}}))")
         expect(links).to_have_count(5)
-        expect(self.page.locator('#rankings')).to_contain_text('尚待审看')
+        expect(self.page.locator('#rankings')).to_contain_text('五部合计 60 分 27 秒')
 
     def test_every_pick_opens_its_details_and_returns_keyboard_focus(self):
         self.open()
-        for fid, title in [('baizhou', '白昼禁区'), ('yagaoheshuaya', '牙膏和牙刷'), ('xingchendao', '星辰岛'),
-                           ('huanshoujinmen', '幻手津门'), ('yabiao', '哑镖')]:
+        for fid, title in [('helong', '合龙'), ('baizhou', '白昼禁区'), ('xingchendao', '星辰岛'),
+                           ('yagaoheshuaya', '牙膏和牙刷'), ('pinzi', '牌子')]:
             trigger = self.page.locator(f'#rankings [data-open-film="{fid}"]')
             trigger.focus()
             self.page.keyboard.press('Enter')
@@ -78,8 +78,8 @@ class FramepickPicks(unittest.TestCase):
         self.page.locator('#filmSearch').fill('不存在的片名123')
         expect(self.page.locator('#emptyState')).to_be_visible()
         expect(self.page.locator('#rankings [data-open-film]')).to_have_count(5)
-        self.page.locator('#rankings [data-open-film="yabiao"]').click()
-        expect(self.page.locator('#detailTitle')).to_have_text('哑镖')
+        self.page.locator('#rankings [data-open-film="pinzi"]').click()
+        expect(self.page.locator('#detailTitle')).to_have_text('牌子')
 
     def test_edition_dates_and_ranks_identify_the_current_selection(self):
         self.open()
@@ -102,7 +102,7 @@ class FramepickPicks(unittest.TestCase):
         self.assertEqual(self.page.evaluate("""() => [...document.querySelectorAll('#rankings .pick-cover')]
             .map((cover) => cover.children.length)"""), [1, 1, 1, 1, 1], '封面里只该有图片，不许有任何浮层')
         self.assertNotIn('第一次', self.page.locator('#rankings').inner_text())
-        expect(self.page.locator('#rankings')).to_contain_text('名次待审看后确认')
+        expect(self.page.locator('#rankings')).to_contain_text('按观看顺序排列')
 
     def test_mobile_and_desktop_have_readable_cards_without_horizontal_overflow(self):
         for width in [320, 390, 768, 1440]:
