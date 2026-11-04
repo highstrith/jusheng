@@ -32,6 +32,9 @@ jobs:
       - name: Build site
         run: ./scripts/build-site.sh
 
+      - name: Verify OSS images
+        run: ./scripts/upload-cover-assets.sh --check
+
       - name: Setup Pages
         uses: actions/configure-pages@v5
 

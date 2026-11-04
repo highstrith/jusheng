@@ -1,44 +1,38 @@
 #!/bin/sh
-# 把封面素材上传到 OSS（凭据在 ~/.ossutilconfig，AccessKey 长期启用，不必每次开关）。
-#
-#   scripts/upload-cover-assets.sh            上传 reel/img 下的 webp
-#   scripts/upload-cover-assets.sh --dry-run  只列出会传什么
-#
-# 前提：`~/bin/ossutil` 已配好（ossutil config，endpoint 用 oss-cn-hangzhou）。
-set -e
+# 上传当前站点的封面与分享卡。凭据只由本机 ossutil 配置读取，不进仓库或 CI。
+#   scripts/upload-cover-assets.sh --dry-run  只列文件
+#   scripts/upload-cover-assets.sh --check    只核对公开图片（CI 无需凭据）
+set -eu
 cd "$(dirname "$0")/.."
 
 OSSUTIL="${OSSUTIL:-$HOME/bin/ossutil}"
-BUCKET="${BUCKET:-oss://highstrith-assets/reel/img/}"
+BUCKET="oss://highstrith-assets/reel/img/"
+BASE="https://highstrith-assets.oss-cn-hangzhou.aliyuncs.com/reel/img/"
 
-if [ ! -x "$OSSUTIL" ]; then
-  echo "找不到 ossutil：$OSSUTIL" >&2
-  exit 2
-fi
-
-# ossutil 没有 --dry-run，这里只把待传清单打出来。
-if [ "$1" = "--dry-run" ]; then
-  echo "待上传（reel/img/*.webp，raw/ 除外）："
-  for file in reel/img/*.webp; do
+if [ "${1:-}" = "--dry-run" ]; then
+  echo "待上传："
+  for file in img/*.webp img/*.jpg; do
+    [ -f "$file" ] || continue
     printf '  %6sKB  %s\n' "$(( $(wc -c < "$file") / 1024 ))" "$(basename "$file")"
   done
   exit 0
 fi
 
-# 只传 webp 封面；raw/ 是平台原图缓存，属于母版，不进 OSS。
-# 素材不是哈希命名，Cache-Control 与 HTML 对齐 600 秒，换图最多 10 分钟生效。
-# exFAT 盘会给每个文件造 `._原名` 伴生文件，扩展名同样是 .webp，先删掉再传，
-# 否则桶里会多出一堆 4KB 的垃圾对象（framepick-ship.sh 里也有同样一步）。
-find reel/img -name '._*' -type f -delete 2>/dev/null
-"$OSSUTIL" cp -r --update --jobs 4 \
-  --include "*.webp" --exclude "._*" \
-  --meta "Cache-Control:public,max-age=600" \
-  reel/img/ "$BUCKET"
+# 仅当前目录图片，排除原图缓存与 exFAT 伴生文件；同名换图缓存最长 10 分钟。
+if [ "${1:-}" != "--check" ]; then
+  [ -x "$OSSUTIL" ] || { echo "找不到 ossutil：$OSSUTIL" >&2; exit 2; }
+  for file in img/*.webp img/*.jpg; do
+    [ -f "$file" ] || continue
+    "$OSSUTIL" cp --update --force --meta "Cache-Control:public,max-age=600" "$file" "$BUCKET"
+  done
+fi
 
-echo
-echo "上传后逐个确认（应全部 200）："
-for file in reel/img/*.webp; do
+echo "逐张核对 OSS 图片（失败即停止发布）："
+for file in img/*.webp img/*.jpg; do
+  [ -f "$file" ] || continue
   name=$(basename "$file")
-  code=$(curl -s -o /dev/null -w '%{http_code}' -I "https://highstrith-assets.oss-cn-hangzhou.aliyuncs.com/reel/img/$name")
+  # 与浏览器跨域图片请求一致，核对正式站来源也被桶的防盗链规则放行。
+  code=$(curl -sS --retry 2 --connect-timeout 10 --max-time 30 --referer "https://highstrith.github.io/" -o /dev/null -w '%{http_code}' -I "$BASE$name")
   printf '  %s %s\n' "$code" "$name"
+  [ "$code" = "200" ] || { echo "OSS 图片不可用：$name" >&2; exit 1; }
 done

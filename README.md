@@ -32,6 +32,10 @@ node scripts/framepick-library-cli.mjs list|show|candidate|status    片库操�
 片库数据在 `~/.framepick/library/library.json`，**不在仓库里**：它是内容资产，
 不是代码。换机器要单独带走。
 
+线上图片使用已有杭州 OSS。本地源码保持 `img/` 相对路径，`build-site.sh` 统一改写
+发布产物；`ship.sh` 先调用本机 ossutil 上传图片，CI 再核对全部公开图片可用后部署。
+单独补传可运行 `./scripts/upload-cover-assets.sh`，只检查用 `--check`，无需向 CI 提交密钥。
+
 ## 和作品集的关系
 
 作品集是另一个仓库 [highstrithstate](https://github.com/highstrith/highstrithstate)，

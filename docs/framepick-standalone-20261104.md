@@ -48,7 +48,7 @@ scripts/ship.sh "说明文字"
 ```
 
 1. 刷抖音封面（`--with-douyin`）→ 封面构建（转 640w webp）
-2. 重建首页与片库页，跑校验与全量测试
+2. 上传当前 `img/` 图片到 OSS，逐张确认 HTTP 200；重建首页与片库页，跑校验与全量测试
 3. `build-site.sh` 生成 `public/`，提交并推送 `main`
 4. 等 Actions 跑完，复核线上卡片数
 
@@ -56,7 +56,7 @@ scripts/ship.sh "说明文字"
 
 ## 踩过的坑
 
-**封面不再走 OSS。** 早先作品集那边用 `MEDIA_CDN_BASE_URL` 把封面改写到 OSS；独立站没有这一步，页面里就是 `img/xxx.webp` 相对路径，封面跟站点一起发在 Pages 上。发布脚本里的 OSS 上传与自检因此删掉了，`ship.sh` 不需要任何云端凭据。
+**封面已恢复走 OSS（11-04 用户确认）。** 独立站拆出时遗漏了发布图片地址改写，曾全部走 Pages。现由 `build-site.sh` 将产物内的封面、片库数据和分享卡地址统一指向已有 OSS；本地源码仍使用 `img/xxx.webp`。`ship.sh` 先由本机 ossutil 上传与自检，CI 再无凭据检查公开图片可用性，凭据不进仓库或前端。
 
 **exFAT 的 `._*` 伴生文件会污染新仓库。** `rsync -a`、`git init` 都会生成，`git fsck` 会读错。`.gitignore` 里加了 `._*`，同步/上传前统一 `find -name '._*' -delete`。
 

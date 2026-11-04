@@ -35,6 +35,7 @@ python3 -m unittest \
   tests/framepick-demo-smoke.py \
   tests/framepick-viewing-smoke.py \
   tests/framepick-typography-smoke.py \
+  tests/framepick-oss-smoke.py \
   tests/framepick-discovery-scan-test.py
 
 node --test tests/framepick-reviews-api-integration.mjs

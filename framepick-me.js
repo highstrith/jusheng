@@ -85,7 +85,11 @@
       cover.className = 'me-history-cover';
       cover.href = 'index.html?film=' + encodeURIComponent(row.filmId);
       const image = document.createElement('img');
-      image.src = row.poster || 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 640 360%22%3E%3Crect width=%22640%22 height=%22360%22 fill=%22%23191c21%22/%3E%3C/svg%3E';
+      // 旧记录保存的是相对路径或 Pages 地址；发布时统一从 OSS 展示，不改用户记录。
+      let poster = row.poster || '';
+      const legacy = poster.match(/^(?:img\/|(?:https:\/\/highstrith\.github\.io)?\/(?:jusheng|highstrithstate\/reel)\/img\/)([A-Za-z0-9._-]+)$/);
+      if (window.FRAMEPICK_IMAGE_BASE && legacy) poster = window.FRAMEPICK_IMAGE_BASE + legacy[1];
+      image.src = poster || 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 640 360%22%3E%3Crect width=%22640%22 height=%22360%22 fill=%22%23191c21%22/%3E%3C/svg%3E';
       image.alt = row.title ? `《${row.title}》封面` : '作品封面';
       image.loading = 'lazy';
       image.decoding = 'async';

@@ -27,12 +27,13 @@ for file in *.js *.css; do
   cp "$file" "$OUT/"
 done
 
-rsync -a --exclude '/raw/' img/ "$OUT/img/"
+rsync -a --exclude '/raw/' --exclude '._*' img/ "$OUT/img/"
 touch "$OUT/.nojekyll"
 
 # 守卫：页面里引用到的本站文件必须都在产物里，别等线上 404 才发现
 python3 - "$OUT" <<'PY'
 import os, re, sys
+from pathlib import Path
 out = sys.argv[1]
 html = ''.join(open(os.path.join(out, p), encoding='utf-8').read()
                for p in ('index.html', 'library.html', 'me.html'))
@@ -46,6 +47,24 @@ if missing:
     print('✗ 产物缺这些被页面引用的文件：', ', '.join(sorted(missing)[:10]), file=sys.stderr)
     sys.exit(1)
 print(f'  产物 {sum(len(f) for _, _, f in os.walk(out))} 个文件，页面引用齐全')
+
+# 只改发布产物。本地源码与片库数据继续用 img/，离线预览和校验不依赖 OSS。
+base = 'https://highstrith-assets.oss-cn-hangzhou.aliyuncs.com/reel/img/'
+images = {p.name for p in Path(out, 'img').iterdir()
+          if p.is_file() and not p.name.startswith('.')}
+reference = re.compile(r'''(["'])(?:https://highstrith\.github\.io/jusheng/)?img/([A-Za-z0-9._-]+)\1''')
+for file in Path(out).iterdir():
+    if file.name.startswith('.') or file.suffix not in ('.html', '.js', '.css'):
+        continue
+    source = file.read_text(encoding='utf-8')
+    result = reference.sub(lambda m: m[1] + base + m[2] + m[1] if m[2] in images else m[0], source)
+    if file.suffix == '.html':
+        config = ('<link rel="preconnect" href="https://highstrith-assets.oss-cn-hangzhou.aliyuncs.com">'
+                  '<script>window.FRAMEPICK_IMAGE_BASE="' + base + '";</script>')
+        result = result.replace('<head>', '<head>\n' + config, 1)
+    file.write_text(result, encoding='utf-8')
+print(f'  图片已切到 OSS：{len(images)} 个文件（含片库数据与分享卡）')
 PY
 
+find "$OUT" -name '._*' -type f -delete
 echo "  public/ 就绪"

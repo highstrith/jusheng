@@ -2,8 +2,8 @@
 # 橘生梦厂「一条命令上线」：取封面 → 转图 → 重建页面 → 校验 → 测试
 #                              → 构建 public/ → 推 main → 等部署 → 线上复核。
 #
-# 封面跟站点一起放在 GitHub Pages 上（页面里就是 img/xxx.webp 相对路径），
-# 不走 OSS，所以这里不需要任何云端凭据。
+# 本地源码仍用 img/；发布前先上传 OSS，build-site.sh 再改写产物图片地址。
+# OSS 凭据只由本机 ossutil 读取，不进入 GitHub Actions 或浏览器。
 #
 #   scripts/ship.sh "第三批 5 部上架"            全流程（含浏览器测试）
 #   scripts/ship.sh "第三批 5 部上架" --fast     跳过浏览器测试，只跑校验
@@ -55,6 +55,7 @@ fi
 
 step "2/6 取封面并转 640w webp"
 node scripts/framepick-cover-build.mjs || fail "封面构建失败，见上面的 ✗ 行"
+./scripts/upload-cover-assets.sh || fail "OSS 上传或图片自检失败，停止发布"
 
 step "3/6 重建页面并校验"
 node scripts/build-framepick-library.mjs || fail "页面重建失败"
