@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<script src="site-mode.js?v=20261104-mode1"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#101114">
+<title>我的记录 — 橘生梦厂</title>
+<meta name="description" content="看过的作品、收藏与留下过的评价，记录保存在这个浏览器。">
+<meta name="robots" content="noindex">
+<link rel="canonical" href="https://highstrith.github.io/jusheng/me.html">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='5' fill='%23101114'/%3E%3Crect x='7' y='9' width='18' height='14' fill='none' stroke='%23eeeee8' stroke-width='1.6'/%3E%3Cpath d='M13 13.5l7 2.5-7 2.5z' fill='%23eeeee8'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="framepick.css?v=20261104-mode1">
+<script src="review-config.js?v=20261102-reviews1" defer></script>
+<script src="framepick-accounts.js?v=20261103-guest1" defer></script>
+<script src="framepick-viewing.js?v=20261103-viewing1" defer></script>
+<script src="framepick-me.js?v=20261103-viewing1" defer></script>
+</head>
+<body>
+<a class="skip" href="#meHistory">跳到观看历史</a>
+<svg class="symbols" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><symbol id="bookmark" viewBox="0 0 24 24"><path d="M6 4h12v16l-6-4-6 4z"/></symbol><symbol id="search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></symbol><symbol id="arrow" viewBox="0 0 24 24"><path d="M6 18 18 6M6 6h12v12"/></symbol></svg>
+
+<header class="bar">
+  <div class="wrap bar-in">
+    <a class="mark" href="./" aria-label="橘生梦厂首页"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M3 11V4h7M22 4h7v7M29 21v7h-7M10 28H3v-7"/><path d="m13 11 8 5-8 5z"/></svg><span class="mark-cn">橘生梦厂</span><span class="mark-en">JU DREAM MILL</span></a>
+    <nav aria-label="站内导航"><a href="index.html#rankings">榜单</a><a href="library.html">全部作品</a><a href="index.html#standard">选片标准</a><a href="index.html#about">关于</a></nav>
+    <button id="accountEntry" class="account-entry js-only" type="button">登录 / 注册</button>
+  </div>
+</header>
+
+<main class="me-page wrap">
+  <p class="me-kicker"><span class="live-dot" aria-hidden="true"></span>观看记录 · <span id="meStorageNote">保存在此浏览器</span></p>
+  <div class="me-head">
+    <h1>我的记录</h1>
+    <p class="me-account" id="meAccountLine" role="status">正在读取账号状态…</p>
+  </div>
+
+  <div class="me-stats" id="meStats">
+    <div class="me-stat"><strong id="meWatchedCount">0</strong><span>已看作品</span></div>
+    <div class="me-stat"><strong id="meHistoryCount">0</strong><span>看过简介／打开过</span></div>
+    <div class="me-stat"><strong id="meOpenCount">0</strong><span>累计打开次数</span></div>
+  </div>
+
+  <section class="me-section" aria-labelledby="meHistoryTitle">
+    <div class="me-section-heading">
+      <div><h2 id="meHistoryTitle">观看历史</h2><p>按最近打开排序；点「前往原平台观看」会自动记为已看。</p></div>
+      <button type="button" id="meClearHistory" class="button secondary" hidden>清空观看历史</button>
+    </div>
+    <div class="me-history-list" id="meHistory"></div>
+    <p class="me-empty" id="meHistoryEmpty" role="status">还没有观看记录。回片库打开一部作品，这里就会出现它的踪迹。</p>
+  </section>
+
+  <section class="me-section" aria-labelledby="meLinksTitle">
+    <div class="me-section-heading"><h2 id="meLinksTitle">其他记录</h2></div>
+    <div class="me-links">
+      <a href="index.html?saved=1#entries">我的收藏</a>
+      <a href="index.html#entries">回片库继续找片</a>
+    </div>
+  </section>
+</main>
+
+<footer class="wrap foot"><a class="footer-brand" href="./">橘生梦厂 <span>JU DREAM MILL</span></a><p>© 2026 · 好梦，正在上映</p><a href="../#filmRecommendations">橘小桔的主页</a></footer>
+
+<dialog id="accountDialog" class="membership-dialog" aria-labelledby="accountTitle"><button type="button" class="dialog-close" id="accountClose" aria-label="关闭账号">×</button><span class="plan-label">可选账号</span><span class="state-chip" data-state="local" data-demo-chip="本地演示 · 非线上账号">演示</span><h2 id="accountTitle">登录后，换设备也能找回。</h2><p>账号用于承载观看记录与后续的单片购买、观影权益。当前尚未开放购票，登录后依然可以免费发现、评价与跳转原作。</p><p id="accountAvailability" role="status">正在检查账号服务…</p>
+  <form id="accountForm" class="account-form"><label for="accountEmail">邮箱<input id="accountEmail" name="email" type="email" inputmode="email" autocomplete="email" maxlength="200" required></label><label for="accountPassword">密码<input id="accountPassword" name="password" type="password" autocomplete="current-password" minlength="8" maxlength="200" required></label><label for="accountNickname" id="accountNicknameRow" hidden>昵称（可选）<input id="accountNickname" name="nickname" maxlength="24" autocomplete="nickname"></label><div class="account-actions"><button id="accountSubmit" class="button" type="submit">登录</button><button id="accountSwitch" class="link-button" type="button">还没有账号？注册</button></div></form>
+  <p id="accountError" role="alert"></p><p id="accountStatus" role="status"></p>
+  <div id="accountSignedIn" hidden><p id="accountWho" class="account-note"></p><div class="account-actions"><button id="accountLogout" class="button secondary" type="button">退出登录</button></div></div>
+  <p class="account-note">访客观看记录保存在本浏览器，登录后合并进账号、换设备可恢复；退出登录后本页回到访客记录。找回密码的邮件发送尚未接通，需要重置请通过页尾邮箱联系。</p>
+</dialog>
+<p id="notice" class="notice" role="status" aria-live="polite"></p>
+</body>
+</html>
