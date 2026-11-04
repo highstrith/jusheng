@@ -5,13 +5,20 @@
   const dialog = $('#accountDialog');
   if (!entry || !dialog) return;
 
-  const configured = String(window.FRAMEPICK_REVIEW_API || '').trim();
+  const configured = String(window.FRAMEPICK_ACCOUNT_API || window.FRAMEPICK_REVIEW_API || '').trim();
   const loopback = ['localhost', '127.0.0.1', '[::1]', '::1'].includes(location.hostname);
   let api = configured || (loopback && /^https?:$/.test(location.protocol) ? '/api/framepick' : '');
   try {
     if (api && !/^https?:$/.test(new URL(api, location.href).protocol)) api = '';
   } catch { api = ''; }
   api = api.replace(/\/+$/, '');
+
+  // 跨站登录态：Cookie 在 GitHub Pages → 函数计算这种跨站场景会被浏览器丢掉，
+  // 所以会话同时以 Bearer token 的形式放在 localStorage，请求时带上。
+  const TOKEN_KEY = 'framepick:session:v1';
+  function readToken() { try { return localStorage.getItem(TOKEN_KEY) || ''; } catch { return ''; } }
+  function saveToken(value) { try { value ? localStorage.setItem(TOKEN_KEY, value) : localStorage.removeItem(TOKEN_KEY); } catch { /* 无痕模式：本次会话内存态 */ } }
+  function authHeader() { const token = readToken(); return token ? { Authorization: `Bearer ${token}` } : {}; }
 
   const form = $('#accountForm');
   const email = $('#accountEmail');
@@ -97,8 +104,8 @@
   async function call(path, options = {}) {
     const response = await fetch(`${api}${path}`, {
       credentials: 'same-origin',
-      headers: { ...(options.body ? { 'Content-Type': 'application/json' } : {}) },
       ...options,
+      headers: { ...(options.body ? { 'Content-Type': 'application/json' } : {}), ...authHeader(), ...(options.headers || {}) },
     });
     let payload = null;
     try {
@@ -171,6 +178,7 @@
       const body = { email: email.value.trim(), password: password.value };
       if (mode === 'register') body.nickname = nickname.value.trim();
       const data = await call(mode === 'register' ? '/accounts/register' : '/accounts/login', { method: 'POST', body: JSON.stringify(body) });
+      if (data?.token) saveToken(data.token);
       account = data.account || null;
       // No navigation and no reload: the open film and filters survive sign-in.
       setMode('login');
@@ -193,6 +201,7 @@
     logout.disabled = true;
     try {
       await call('/accounts/logout', { method: 'POST', body: JSON.stringify({}) });
+      saveToken('');
       account = null;
       render();
       say(status, '');

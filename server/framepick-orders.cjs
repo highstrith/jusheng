@@ -12,6 +12,7 @@ const crypto = require('node:crypto');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
+const { createFileStore } = require('./framepick-store.cjs');
 
 // Isolated demo goods. Real catalogue films must never be sellable here: the
 // demo catalogue is keyed `demo-` so a film id can never collide by accident.
@@ -88,30 +89,33 @@ function createOrderHandler({
   dataDir = process.env.FRAMEPICK_ORDERS_DATA_DIR || path.join(os.homedir(), '.framepick', 'orders'),
   allowedOrigin = process.env.FRAMEPICK_REVIEWS_ALLOWED_ORIGIN || '',
   clock = Date.now,
+  store: providedStore = null,
 } = {}) {
   if (!accounts || typeof accounts.resolveAccount !== 'function') throw new Error('createOrderHandler 需要 accounts.resolveAccount');
-  const ordersFile = path.join(dataDir, 'orders.json');
+  const store = providedStore || createFileStore({ dir: dataDir });
 
   let db = { version: 1, orders: [], entitlements: [], simulationEvents: [] };
   let ready = null;
 
   async function persist() {
-    const temporary = `${ordersFile}.${process.pid}.tmp`;
-    await fs.promises.writeFile(temporary, `${JSON.stringify(db, null, 2)}\n`, 'utf8');
-    await fs.promises.rename(temporary, ordersFile);
+    await store.write('orders.json', `${JSON.stringify(db, null, 2)}\n`);
   }
 
   async function initialize() {
-    await fs.promises.mkdir(dataDir, { recursive: true, mode: 0o700 });
-    try {
-      db = JSON.parse(await fs.promises.readFile(ordersFile, 'utf8'));
-      if (!Array.isArray(db.orders) || !Array.isArray(db.entitlements) || !Array.isArray(db.simulationEvents)) {
-        throw new Error('bad orders file');
-      }
-    } catch (error) {
-      if (error.code !== 'ENOENT') throw new Error(`订单数据无法读取，已拒绝覆盖：${error.message}`);
+    const text = await store.read('orders.json');
+    if (text === null) {
       db = { version: 1, orders: [], entitlements: [], simulationEvents: [] };
       await persist();
+      return;
+    }
+    try {
+      const parsed = JSON.parse(text);
+      if (!Array.isArray(parsed.orders) || !Array.isArray(parsed.entitlements) || !Array.isArray(parsed.simulationEvents)) {
+        throw new Error('bad shape');
+      }
+      db = parsed;
+    } catch (error) {
+      throw new Error(`订单数据无法读取，已拒绝覆盖：${error.message}`);
     }
   }
 

@@ -11,13 +11,19 @@
 (() => {
   'use strict';
 
-  const configured = String(window.FRAMEPICK_REVIEW_API || '').trim();
+  const configured = String(window.FRAMEPICK_ACCOUNT_API || window.FRAMEPICK_REVIEW_API || '').trim();
   const loopback = ['localhost', '127.0.0.1', '[::1]', '::1'].includes(location.hostname);
   let api = configured || (loopback && /^https?:$/.test(location.protocol) ? '/api/framepick' : '');
   try {
     if (api && !/^https?:$/.test(new URL(api, location.href).protocol)) api = '';
   } catch { api = ''; }
   api = api.replace(/\/+$/, '');
+  // 会话 token 与账号模块共用同一个键：跨站请求带 Bearer，浏览器不再依赖第三方 Cookie。
+  const SESSION_KEY = 'framepick:session:v1';
+  function viewingAuthHeader() {
+    try { const token = localStorage.getItem(SESSION_KEY); return token ? { Authorization: `Bearer ${token}` } : {}; } catch { return {}; }
+  }
+
 
   const WATCHED_KEY = 'framepick:watched:v1';
   const HISTORY_KEY = 'framepick:history:v1';
@@ -83,7 +89,7 @@
   async function call(path, options = {}) {
     const response = await fetch(`${api}${path}`, {
       credentials: 'same-origin',
-      headers: { ...(options.body ? { 'Content-Type': 'application/json' } : {}) },
+      headers: { ...(options.body ? { 'Content-Type': 'application/json' } : {}), ...viewingAuthHeader() },
       ...options,
     });
     let payload = null;

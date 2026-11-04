@@ -12,6 +12,7 @@ const crypto = require('node:crypto');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
+const { createFileStore } = require('./framepick-store.cjs');
 
 const COOKIE_NAME = 'framepick_account';
 const SESSION_DAYS = 30;
@@ -65,14 +66,13 @@ function createAccountHandler({
   allowedOrigin = process.env.FRAMEPICK_REVIEWS_ALLOWED_ORIGIN || '',
   sessionDays = SESSION_DAYS,
   clock = Date.now,
+  store: providedStore = null,
 } = {}) {
   if (allowedOrigin) {
     const parsed = new URL(allowedOrigin);
     if (!['http:', 'https:'].includes(parsed.protocol) || parsed.origin !== allowedOrigin) throw new Error('Allowed origin must be one exact HTTP(S) origin');
   }
-  const accountsFile = path.join(dataDir, 'accounts.json');
-  const sessionsFile = path.join(dataDir, 'sessions.json');
-  const keyFile = path.join(dataDir, 'session-key');
+  const store = providedStore || createFileStore({ dir: dataDir });
   const attempts = new Map();
 
   let db = { version: 1, accounts: [] };
@@ -80,51 +80,64 @@ function createAccountHandler({
   let secret = '';
   let ready = null;
 
-  async function persist(file, value) {
-    const temporary = `${file}.${process.pid}.tmp`;
-    await fs.promises.writeFile(temporary, `${JSON.stringify(value, null, 2)}\n`, 'utf8');
-    await fs.promises.rename(temporary, file);
+  async function persist(name, value) {
+    return store.write(name, `${JSON.stringify(value, null, 2)}\n`);
+  }
+
+  async function readJson(name, label, valid) {
+    const text = await store.read(name);
+    if (text === null) return null;
+    try {
+      const value = JSON.parse(text);
+      if (!valid(value)) throw new Error('bad shape');
+      return value;
+    } catch (error) {
+      throw new Error(`${label}无法读取，已拒绝覆盖：${error.message}`);
+    }
   }
 
   async function initialize() {
-    await fs.promises.mkdir(dataDir, { recursive: true, mode: 0o700 });
-    try {
-      db = JSON.parse(await fs.promises.readFile(accountsFile, 'utf8'));
-      if (!Array.isArray(db.accounts)) throw new Error('bad accounts file');
-    } catch (error) {
-      if (error.code !== 'ENOENT') throw new Error(`账号数据无法读取，已拒绝覆盖：${error.message}`);
+    const storedAccounts = await readJson('accounts.json', '账号数据', (value) => Array.isArray(value?.accounts));
+    if (storedAccounts) {
+      db = storedAccounts;
+    } else {
       db = { version: 1, accounts: [] };
-      await persist(accountsFile, db);
+      await persist('accounts.json', db);
     }
-    try {
-      sessions = JSON.parse(await fs.promises.readFile(sessionsFile, 'utf8'));
-      if (!Array.isArray(sessions.sessions)) throw new Error('bad sessions file');
-    } catch (error) {
-      if (error.code !== 'ENOENT') throw new Error(`会话数据无法读取，已拒绝覆盖：${error.message}`);
+    const storedSessions = await readJson('sessions.json', '会话数据', (value) => Array.isArray(value?.sessions));
+    if (storedSessions) {
+      sessions = storedSessions;
+    } else {
       sessions = { version: 1, sessions: [] };
-      await persist(sessionsFile, sessions);
+      await persist('sessions.json', sessions);
     }
-    try {
-      secret = await fs.promises.readFile(keyFile, 'utf8');
-    } catch (error) {
-      if (error.code !== 'ENOENT') throw error;
+    secret = await store.read('session-key');
+    if (secret === null) {
       secret = crypto.randomBytes(32).toString('hex');
-      try {
-        await fs.promises.writeFile(keyFile, secret, { flag: 'wx', mode: 0o600 });
-      } catch (writeError) {
-        if (writeError.code !== 'EEXIST') throw writeError;
-        secret = await fs.promises.readFile(keyFile, 'utf8');
-      }
+      const { created } = await store.create('session-key', secret);
+      if (!created) secret = await store.read('session-key');
     }
     if (!/^[a-f0-9]{64}$/.test(secret)) throw new Error('Invalid session signing key');
   }
 
   const signature = (sessionId) => crypto.createHmac('sha256', secret).update(sessionId).digest('hex');
 
-  function readSession(req) {
+  // 登录态两种载体：同源用 Cookie，跨站（GitHub Pages → 函数计算）用 Bearer。
+  // 跨站 Cookie 会被 Safari／微信按第三方 Cookie 丢掉，所以线上必须走 Bearer；
+  // Cookie 保留给本机预览，两边签名与过期规则完全一致。
+  function sessionToken(req) {
+    const header = String(req.headers.authorization || '');
+    const bearer = header.match(/^Bearer\s+([a-f0-9]{32}\.[a-f0-9]{64})$/i);
+    if (bearer) return bearer[1];
     const matches = String(req.headers.cookie || '').split(';').map((value) => value.trim()).filter((value) => value.startsWith(`${COOKIE_NAME}=`));
     if (matches.length !== 1) return null;
-    const matched = matches[0].slice(COOKIE_NAME.length + 1).match(/^([a-f0-9]{32})\.([a-f0-9]{64})$/);
+    return matches[0].slice(COOKIE_NAME.length + 1);
+  }
+
+  function readSession(req) {
+    const token = sessionToken(req);
+    if (!token) return null;
+    const matched = token.match(/^([a-f0-9]{32})\.([a-f0-9]{64})$/);
     if (!matched) return null;
     const [, sessionId, signed] = matched;
     const expected = Buffer.from(signature(sessionId), 'hex');
@@ -150,8 +163,20 @@ function createAccountHandler({
     const now = clock();
     sessions.sessions = sessions.sessions.filter((entry) => entry.expiresAt > now);
     sessions.sessions.push({ id, accountId, createdAt: new Date(now).toISOString(), expiresAt: now + sessionDays * 24 * 3600 * 1000 });
-    await persist(sessionsFile, sessions);
+    await persist('sessions.json', sessions);
     return id;
+  }
+
+  // 部署在函数计算/反向代理后面时，socket 地址是实例地址，所有人共用一个限流桶；
+  // 只有显式打开 FRAMEPICK_TRUST_PROXY 才采信转发头，避免本机被伪造成任意 IP。
+  function clientIp(req) {
+    if (process.env.FRAMEPICK_TRUST_PROXY === '1') {
+      const forwarded = String(req.headers['x-forwarded-for'] || '').split(',')[0].trim();
+      if (forwarded) return forwarded;
+      const real = String(req.headers['x-real-ip'] || '').trim();
+      if (real) return real;
+    }
+    return req.socket.remoteAddress || 'unknown';
   }
 
   function rateLimit(key, kind) {
@@ -219,8 +244,8 @@ function createAccountHandler({
       account.passwordHash = await hashPassword(String(password));
       account.updatedAt = new Date(clock()).toISOString();
       sessions.sessions = sessions.sessions.filter((entry) => entry.accountId !== account.id);
-      await persist(accountsFile, db);
-      await persist(sessionsFile, sessions);
+      await persist('accounts.json', db);
+      await persist('sessions.json', sessions);
       return publicAccount(account);
     },
 
@@ -252,7 +277,7 @@ function createAccountHandler({
         if (req.method !== 'GET' && req.headers['sec-fetch-site'] === 'cross-site' && (!origin || origin !== allowedOrigin)) {
           throw failure(403, '不允许跨站提交。');
         }
-        const ip = req.socket.remoteAddress || 'unknown';
+        const ip = clientIp(req);
 
         if (req.method === 'GET' && pathname === '/api/framepick/accounts/session') {
           const found = readSession(req);
@@ -276,10 +301,10 @@ function createAccountHandler({
             updatedAt: new Date(now).toISOString(),
           };
           db.accounts.push(account);
-          await persist(accountsFile, db);
+          await persist('accounts.json', db);
           const sessionId = await issueSession(account.id);
           setSessionCookie(req, res, sessionId, sessionDays * 24 * 3600);
-          sendJson(res, 201, { signedIn: true, account: publicAccount(account) });
+          sendJson(res, 201, { signedIn: true, token: `${sessionId}.${signature(sessionId)}`, account: publicAccount(account) });
           return true;
         }
 
@@ -293,7 +318,7 @@ function createAccountHandler({
           if (!account || !(await verifyPassword(password, account.passwordHash))) throw failure(401, '邮箱或密码不正确。');
           const sessionId = await issueSession(account.id);
           setSessionCookie(req, res, sessionId, sessionDays * 24 * 3600);
-          sendJson(res, 200, { signedIn: true, account: publicAccount(account) });
+          sendJson(res, 200, { signedIn: true, token: `${sessionId}.${signature(sessionId)}`, account: publicAccount(account) });
           return true;
         }
 
@@ -301,7 +326,7 @@ function createAccountHandler({
           const found = readSession(req);
           if (found) {
             sessions.sessions = sessions.sessions.filter((entry) => entry.id !== found.record.id);
-            await persist(sessionsFile, sessions);
+            await persist('sessions.json', sessions);
           }
           clearSessionCookie(req, res);
           sendJson(res, 200, { signedIn: false });

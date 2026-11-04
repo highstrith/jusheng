@@ -95,13 +95,19 @@
 
   // 与账号模块同一条门：只有本机预览（回环地址 http）或显式配置了 API 才访问
   // 订单服务；file:// 与正式静态托管不发任何 /api 请求。
-  const configuredApi = String(window.FRAMEPICK_REVIEW_API || '').trim();
+  const configuredApi = String(window.FRAMEPICK_ACCOUNT_API || window.FRAMEPICK_REVIEW_API || '').trim();
   const loopback = ['localhost', '127.0.0.1', '[::1]', '::1'].includes(location.hostname);
   let apiBase = configuredApi || (loopback && /^https?:$/.test(location.protocol) ? '/api/framepick' : '');
   try {
     if (apiBase && !/^https?:$/.test(new URL(apiBase, location.href).protocol)) apiBase = '';
   } catch { apiBase = ''; }
   apiBase = apiBase.replace(/\/+$/, '');
+  // 会话 token 与账号模块共用同一个键：跨站请求带 Bearer，浏览器不再依赖第三方 Cookie。
+  const SESSION_KEY = 'framepick:session:v1';
+  function orderAuthHeader() {
+    try { const token = localStorage.getItem(SESSION_KEY); return token ? { Authorization: `Bearer ${token}` } : {}; } catch { return {}; }
+  }
+
 
   function pad(n) { return String(n).padStart(2, '0'); }
   function stamp(ms) {
@@ -124,7 +130,7 @@
     if (!apiBase) throw new Error('订单服务未配置');
     const response = await fetch(apiBase + path, {
       credentials: 'same-origin',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...orderAuthHeader() },
       ...options,
       body: options.body === undefined ? undefined : JSON.stringify(options.body),
     });

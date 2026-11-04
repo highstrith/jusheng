@@ -15,6 +15,7 @@
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
+const { createFileStore } = require('./framepick-store.cjs');
 
 const FILM_ID = /^[a-z0-9][a-z0-9-]{0,63}$/;
 const ACTIONS = new Set(['open', 'watch']);
@@ -86,28 +87,31 @@ function createViewingHandler({
   dataDir = process.env.FRAMEPICK_VIEWING_DATA_DIR || path.join(os.homedir(), '.framepick', 'viewing'),
   allowedOrigin = process.env.FRAMEPICK_REVIEWS_ALLOWED_ORIGIN || '',
   clock = Date.now,
+  store: providedStore = null,
 } = {}) {
   if (!accounts || typeof accounts.resolveAccount !== 'function') throw new Error('createViewingHandler 需要 accounts.resolveAccount');
-  const storeFile = path.join(dataDir, 'viewing.json');
+  const store = providedStore || createFileStore({ dir: dataDir });
 
   let db = { version: 1, accounts: {} };
   let ready = null;
 
   async function persist() {
-    const temporary = `${storeFile}.${process.pid}.tmp`;
-    await fs.promises.writeFile(temporary, `${JSON.stringify(db, null, 2)}\n`, 'utf8');
-    await fs.promises.rename(temporary, storeFile);
+    await store.write('viewing.json', `${JSON.stringify(db, null, 2)}\n`);
   }
 
   async function initialize() {
-    await fs.promises.mkdir(dataDir, { recursive: true, mode: 0o700 });
-    try {
-      db = JSON.parse(await fs.promises.readFile(storeFile, 'utf8'));
-      if (!db || typeof db !== 'object' || typeof db.accounts !== 'object') throw new Error('bad viewing file');
-    } catch (error) {
-      if (error.code !== 'ENOENT') throw new Error(`观看记录无法读取，已拒绝覆盖：${error.message}`);
+    const text = await store.read('viewing.json');
+    if (text === null) {
       db = { version: 1, accounts: {} };
       await persist();
+      return;
+    }
+    try {
+      const parsed = JSON.parse(text);
+      if (!parsed || typeof parsed !== 'object' || typeof parsed.accounts !== 'object') throw new Error('bad shape');
+      db = parsed;
+    } catch (error) {
+      throw new Error(`观看记录无法读取，已拒绝覆盖：${error.message}`);
     }
   }
 
