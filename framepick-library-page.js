@@ -6,7 +6,7 @@
   const pager = document.getElementById('libPager');
   const count = document.getElementById('libCount');
   const empty = document.getElementById('libEmpty');
-  const title = document.getElementById('libTitle');
+  const meta = document.getElementById('libMeta');
   const tabs = document.getElementById('libTabs');
   const note = document.getElementById('libNote');
   if (!grid) return;
@@ -63,8 +63,8 @@
     const status = film.statusLabel
       ? `<span class="status-tag" data-completion="${esc(film.completion)}">${esc(film.statusLabel)}</span>` : '';
     return `<article class="card" data-film="${esc(film.id)}" aria-labelledby="${titleId}">
-        <a class="card-media" href="${esc(film.sourceUrl)}" target="_blank" rel="noopener noreferrer" aria-label="前往${esc(film.sourceLabel)}观看《${esc(film.title)}》"><img src="${esc(film.cover)}" width="${film.coverWidth}" height="${film.coverHeight}" alt="${esc(film.coverAlt)}" loading="lazy" decoding="async"><span class="access-badge">${esc(film.badge)}</span><span class="card-runtime">${esc(film.runtime)}</span></a>
-        <div class="card-body"><div class="card-topline"><span class="kind">${esc(film.kind)}</span>${status}<span class="score" aria-label="编辑评分：${esc(film.scoreText)}">${esc(film.scoreText)}</span></div><h3 id="${titleId}">${esc(film.title)}</h3><p class="film-author"><span class="author-name">${esc(film.author)}</span><span class="source-name">${esc(film.sourceLabel)}</span></p><p class="desc">${esc(film.description)}</p><div class="card-actions"><a class="watch" href="${esc(film.sourceUrl)}" target="_blank" rel="noopener noreferrer">${esc(film.watchLabel)}<svg aria-hidden="true"><use href="#arrow"/></svg></a></div></div>
+        <a class="card-media" href="${esc(film.sourceUrl)}" target="_blank" rel="noopener noreferrer" aria-label="前往${esc(film.sourceLabel)}观看《${esc(film.title)}》"><img src="${esc(film.cover)}" width="${film.coverWidth}" height="${film.coverHeight}" alt="${esc(film.coverAlt)}" loading="lazy" decoding="async"><span class="access-badge">${esc(film.badge)}</span></a>
+        <div class="card-body"><div class="card-topline"><span class="kind">${esc(film.kind)}</span><span class="card-runtime">${esc(film.runtime)}</span>${status}<span class="score" aria-label="编辑评分：${esc(film.scoreText)}">${esc(film.scoreText)}</span></div><h3 id="${titleId}">${esc(film.title)}</h3><p class="film-author"><span class="author-name">${esc(film.author)}</span><span class="source-name">${esc(film.sourceLabel)}</span></p><p class="desc">${esc(film.description)}</p><div class="card-actions"><a class="watch" href="${esc(film.sourceUrl)}" target="_blank" rel="noopener noreferrer">${esc(film.watchLabel)}<svg aria-hidden="true"><use href="#arrow"/></svg></a></div></div>
       </article>`;
   }
 
@@ -119,7 +119,7 @@
       : '没有匹配的作品';
     count.textContent = range + (visible.length > PER_PAGE ? ` · 第 ${state.page} / ${lastPage} 页` : '');
     note.textContent = `已收录 ${films.length} 部 · 正式评分陆续补充`;
-    title.textContent = `${films.length} 部精选`;
+    meta.textContent = `共 ${films.length} 部 · 每周更新`;
   }
 
   function bind() {
@@ -141,6 +141,7 @@
   if (!films.length) {
     grid.innerHTML = '';
     count.textContent = '作品表还没生成';
+    meta.textContent = '';
     empty.hidden = false;
     empty.textContent = '作品数据缺失，请先运行 scripts/build-framepick-library.mjs 重新生成。';
     return;
