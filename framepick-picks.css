@@ -9,7 +9,7 @@
 .pick-link { display:block;border-radius:4px }
 .pick-cover { position:relative;overflow:hidden;border-radius:4px;background:var(--surface);aspect-ratio:1.6 }
 .pick-cover img { width:100%;height:100%;object-fit:cover }
-.pick-meta { display:flex;align-items:baseline;gap:8px;margin-top:14px;font-size:11px;color:var(--muted) }
+.pick-meta { display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 8px;margin-top:14px;font-size:11px;color:var(--muted) }
 .pick-rank { color:var(--gold);font-weight:650;font-variant-numeric:tabular-nums;letter-spacing:.02em }
 .pick-genre::before,.pick-runtime::before { content:"·";margin-right:8px;color:var(--muted) }
 .pick-runtime { font-variant-numeric:tabular-nums }
@@ -37,4 +37,8 @@
 @media(max-width:360px) {
   .picks-grid { gap:23px 13px }
   .pick-link h3 { font-size:19px }
+  /* 一列只有 130 多像素，"01 · 悬疑科幻 · 13:27" 一行放不下，允许折行；
+     折行后开头的「·」会变成孤零零一个点，这里直接去掉，靠间距分隔。 */
+  .pick-meta { gap:3px 8px }
+  .pick-genre::before,.pick-runtime::before { display:none }
 }

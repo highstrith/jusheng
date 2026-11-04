@@ -1,0 +1,304 @@
+{
+  "batch": "2026-11-03 机器放行 · 第四批（B 站扩展关键词）",
+  "intakeDate": "2026-11-03",
+  "films": [
+    {
+      "candidate": "dy-7703040154843368740",
+      "id": "yabiao",
+      "title": "哑镖",
+      "category": "film",
+      "genres": [
+        "wuxia"
+      ],
+      "runtime": "21:03",
+      "originalReleaseDate": "2026-11-02",
+      "description": "作者自述为 20 分钟的 AIGC 真人武侠电影，全片 AI 生成：一个不开口的镖客，走一趟不寻常的镖。",
+      "recommendation": "同类里少见的 21 分钟体量，武侠类型加真人质感，值得从第 1 分钟看起。"
+    },
+    {
+      "candidate": "dy-7701305243283344678",
+      "id": "tower32",
+      "title": "第32号塔",
+      "category": "short",
+      "genres": [
+        "scifi"
+      ],
+      "runtime": "15:11",
+      "originalReleaseDate": "2026-10-28",
+      "description": "一次维修任务，逐渐变成一场现实、记忆和精神污染交叠的生存试炼；当幸存者抵达高塔顶端，他发现自己可能早已无法回到真实世界。",
+      "recommendation": "文案自带完整钩子的硬科幻，15 分钟把设定讲完。"
+    },
+    {
+      "candidate": "dy-7702666012889484584",
+      "id": "baizhou",
+      "title": "白昼禁区",
+      "category": "short",
+      "genres": [
+        "scifi"
+      ],
+      "runtime": "09:07",
+      "originalReleaseDate": "2026-11-01",
+      "description": "凌晨两点突然天亮，后来整座城市的人都消失了。",
+      "recommendation": "一句话设定就立住的悬疑科幻，开局 30 秒见分晓。"
+    },
+    {
+      "candidate": "dy-7668628832118689024",
+      "id": "xingchendao",
+      "title": "星辰岛",
+      "category": "short",
+      "genres": [
+        "fantasy"
+      ],
+      "runtime": "13:00",
+      "originalReleaseDate": "2026-08",
+      "description": "原创 AI 动画短片，全长 13 分钟。",
+      "recommendation": "13 分钟的完整叙事动画，不是碎片化的展示片。"
+    },
+    {
+      "candidate": "dy-7619825546926591284",
+      "id": "ticheng",
+      "title": "梯城",
+      "category": "short",
+      "genres": [
+        "scifi"
+      ],
+      "runtime": "09:21",
+      "originalReleaseDate": "2026-04",
+      "description": "被朋友称作「手搓出来的一集爱死机」的原创 AI 动画短片。",
+      "recommendation": "爱死机式的成人向科幻短篇，单集完成度拿得出手。"
+    },
+    {
+      "candidate": "dy-7660096168231259426",
+      "id": "nantianmen",
+      "title": "南天门计划：灰蚀危机",
+      "category": "series",
+      "genres": [
+        "scifi"
+      ],
+      "episode": "第 1 集",
+      "runtime": "10:46",
+      "originalReleaseDate": "2026-08",
+      "description": "一个人用 AI 拍的硬科幻短片。第一集：如果地球还在，我们为什么要先走。",
+      "recommendation": "单人完成的硬科幻开篇，10 分钟把世界观和疑问一起立住。"
+    },
+    {
+      "candidate": "dy-7702763725375212810",
+      "id": "xiangjianhuan",
+      "title": "相见欢",
+      "category": "series",
+      "genres": [
+        "fantasy"
+      ],
+      "episode": "第 1 集：钟山谶",
+      "runtime": "12:36",
+      "originalReleaseDate": "2026-11-01",
+      "description": "第一集：钟山谶。一叶本无去意，满江自有潮声。全片由即梦 AI 短剧工作室制作。",
+      "recommendation": "古风短剧的开篇，台词有章法，先看第一集就知道值不值得追。"
+    },
+    {
+      "candidate": "dy-7661150829201591578",
+      "id": "ruguoai",
+      "title": "如果爱忘了",
+      "category": "short",
+      "genres": [
+        "romance"
+      ],
+      "runtime": "08:01",
+      "originalReleaseDate": "2026-08",
+      "description": "根据网友故事改编的 AI 短片。",
+      "recommendation": "8 分钟讲完一段失恋，靠故事推进而不是特效堆料。"
+    },
+    {
+      "candidate": "dy-7674086505354104100",
+      "id": "shijiazhuang",
+      "title": "杀死那个石家庄人",
+      "category": "music",
+      "genres": [
+        "urban"
+      ],
+      "runtime": "12:54",
+      "originalReleaseDate": "2026-09",
+      "description": "作者学 AI 做视频后的第一个作品：以同名歌曲为底的 AI 影像，把歌词里的北方工业城市拍了出来。",
+      "recommendation": "歌与画面互相成全的一次练习，12 分钟没有靠空镜凑时长。"
+    },
+    {
+      "candidate": "dy-7662353335671950598",
+      "id": "vantier",
+      "title": "Vantier",
+      "category": "music",
+      "genres": [
+        "urban"
+      ],
+      "runtime": "09:26",
+      "originalReleaseDate": "2026-08",
+      "description": "AI 原创短片，主角是一个女团。",
+      "recommendation": "虚拟偶像题材，9 分钟看完一支团的成型。"
+    },
+    {
+      "candidate": "bili-bv1yn4g6xeax",
+      "id": "xiyoushiyilu",
+      "title": "西游拾遗录",
+      "category": "series",
+      "genres": [
+        "fantasy",
+        "xianxia"
+      ],
+      "episode": "第 1 集",
+      "runtime": "10:30",
+      "originalReleaseDate": "2026-11-03",
+      "description": "UP 主手搓的西游题材 AI 短剧。这是系列的第一集，讲什么要看片——标题没剧透，简介也留白。",
+      "recommendation": "西游 + AI 短剧的第一集，成色如何先看这 10 分钟。"
+    },
+    {
+      "candidate": "bili-bv1wuyh6veas",
+      "id": "tangguo",
+      "title": "糖果",
+      "category": "short",
+      "genres": [
+        "scifi"
+      ],
+      "runtime": "08:59",
+      "originalReleaseDate": "2026-09-10",
+      "description": "人类终于有望迈入一级文明，获得走向宇宙的资格。与此同时，土卫十八「潘」突然离开轨道，出现在地球上空——从那天起，任何试图伤害他人的人，都会毫无征兆地变成一地五颜六色的糖果。它似乎是一封来自宇宙的邀请。",
+      "recommendation": "一条规则讲到底的科幻短片：设定干净，反转落点也干净，五百多万播放不是白来的。"
+    },
+    {
+      "candidate": "bili-bv1rann6beaw",
+      "id": "lajizhan",
+      "title": "垃圾站",
+      "category": "series",
+      "genres": [
+        "scifi"
+      ],
+      "episode": "第 1 集 · 连载中",
+      "runtime": "11:54",
+      "originalReleaseDate": "2026-07-10",
+      "description": "夜班操作员驾驶机械爪，把人类丢弃的一切送进焚烧厂。直到某个夜晚，他发现垃圾堆里开始出现不该存在的东西——每一车垃圾，都可能藏着一个来自另一个世界的故事。",
+      "recommendation": "千万播放的原创系列开篇，悬念从第一车垃圾就开始堆，适合一口气追更。"
+    },
+    {
+      "candidate": "bili-bv1txdxbsexp",
+      "id": "dangguance",
+      "title": "当观测既是存在",
+      "category": "short",
+      "genres": [
+        "scifi",
+        "thriller"
+      ],
+      "runtime": "11:16",
+      "originalReleaseDate": "2026-04-12",
+      "description": "一个奇怪的网站会不间断播放来自其他世界的新闻，而人们的观测，会把它们带入我们的世界。",
+      "recommendation": "「观测改变现实」的老命题做出新钩子，DiDi_OK 系列短片里悬念最足的一部。"
+    },
+    {
+      "candidate": "bili-bv1wxxt6jek1",
+      "id": "whitecalamity",
+      "title": "White Calamity",
+      "category": "short",
+      "genres": [
+        "scifi",
+        "thriller"
+      ],
+      "runtime": "14:15",
+      "originalReleaseDate": "2026-11-02",
+      "description": "《慈悲协议》世界观下的续作。人类与获得自由的机械生命共同生存的废土世界，深渊之下潜伏着不断繁殖的异星灾体。机械战士 SERA 曾失去两位重要同伴，一直将灾体视为宿敌，独自在荒漠中追寻复仇——直到一段被封存的记忆苏醒，她发现自己深信不疑的仇恨，建立在一个残酷的谎言之上。",
+      "recommendation": "废土机甲 + 记忆反转，个人系列里完成度最高的一部，前作《慈悲协议》也在 B 站。"
+    },
+    {
+      "candidate": "bili-bv1iqxx6pe1j",
+      "id": "yulin",
+      "title": "雨林中的秘密生物",
+      "category": "film",
+      "genres": [
+        "scifi"
+      ],
+      "runtime": "37:36",
+      "originalReleaseDate": "2026-11-01",
+      "description": "一位年轻女子在偏远的热带雨林中救起一只奇怪的小蜥蜴，以为自己找到了需要保护的弱小生命。然而这只小家伙与一个废弃的生物科技基地、一座隐藏的岛屿秘密、以及丛林中的庞然大物有着千丝万缕的联系。武装守卫步步逼近，她必须抉择：保护小蜥蜴，还是在岛屿吞噬她们之前逃离。",
+      "recommendation": "37 分钟的完整怪兽冒险长片，AI 影像里少见的长叙事体量，喜欢怪兽片的可以进。"
+    },
+    {
+      "candidate": "bili-bv16upj67egs",
+      "id": "longyanyujin",
+      "title": "龙焰余烬",
+      "category": "series",
+      "genres": [
+        "fantasy"
+      ],
+      "episode": "第 1 集 · 连载中",
+      "runtime": "14:32",
+      "originalReleaseDate": "2026-10-11",
+      "description": "她曾拼命保护怀里的幼龙，如今它张开双翼守在她身旁。当巨人逼近村庄，暗红剑光与蓝色龙焰同时燃起——这一战，他们谁也不退。但山的另一边，更多巨人正在赶来。",
+      "recommendation": "人龙羁绊的奇幻系列，从第一集看起，后面两集已在 B 站更新。"
+    },
+    {
+      "candidate": "bili-bv1nyna6aesx",
+      "id": "yagaoheshuaya",
+      "title": "牙膏和牙刷",
+      "category": "short",
+      "genres": [
+        "healing",
+        "urban"
+      ],
+      "runtime": "13:27",
+      "originalReleaseDate": "2026-10-20",
+      "description": "青年牙膏靠零活谋生、深陷债务，救下一只受欺负的小黑狗，取名「牙刷」，一人一狗相依为命。讨债冲突里牙刷护主受伤，牙膏持械伤人，被判入狱十五年；十五年后他重返旧街，抱起在老槐树下等了一辈子的牙刷。",
+      "recommendation": "13 分钟讲完十五年的等待，AI 叙事里少见的萌宠治愈向。"
+    },
+    {
+      "candidate": "bili-bv1tbhd6mes2",
+      "id": "xunhuanlvan",
+      "title": "循环绿岸",
+      "category": "short",
+      "genres": [
+        "fantasy",
+        "scifi"
+      ],
+      "runtime": "15:13",
+      "originalReleaseDate": "2026-09-26",
+      "description": "金鸡 AIGC 单元参赛影片。古蜀少女阿霞救父立誓，与月神白马成婚，学养蚕缫丝；一杯毒羹人神永隔，阿霞化蚕、吐丝成茧，换来华夏丝绸绵延不息。故事之外还埋着「绿岸实验」与绿色文明新科技的伏笔。",
+      "recommendation": "把蚕女传说和科幻设定叠在一起，东方神话在 15 分钟里不只是布景。"
+    },
+    {
+      "candidate": "bili-bv1ubeq6reaz",
+      "id": "huanshoujinmen",
+      "title": "幻手津门",
+      "category": "short",
+      "genres": [
+        "fantasy",
+        "urban"
+      ],
+      "runtime": "16:40",
+      "originalReleaseDate": "2026-09-20",
+      "description": "独立自制 AI 民国题材微电影。清末民初的天津卫，古彩戏法一脉暗藏乾坤——戏法从来不是障眼的小把戏，而是手艺人的风骨与底气。",
+      "recommendation": "16 分钟拍津门戏法行当，这个题材在 AI 短片里少见。"
+    },
+    {
+      "candidate": "bili-bv1jhye66e9o",
+      "id": "zuihoudeshiwu",
+      "title": "最后的食物",
+      "category": "short",
+      "genres": [
+        "scifi",
+        "thriller"
+      ],
+      "runtime": "23:52",
+      "originalReleaseDate": "2026-09-08",
+      "description": "个人 AI 手搓的极限伦理科幻短片：空难后仅存的一位科学家，为了等待救援克隆了六个鲜活的自己。作者自述「很极限，很残酷，很实验」，本集序章无血腥。",
+      "recommendation": "23 分钟的伦理科幻，把「吃掉自己」这个设定真的推到底。"
+    },
+    {
+      "candidate": "bili-bv1eu4p6gerc",
+      "id": "qianshaocanxiang",
+      "title": "前哨残响",
+      "category": "short",
+      "genres": [
+        "scifi"
+      ],
+      "runtime": "19:22",
+      "originalReleaseDate": "2026-11-02",
+      "description": "Outpost Echo：七天一轮记忆清零，知晓不等于记得。荒漠星球、逃亡仿生人，与被掩埋的星际真相。",
+      "recommendation": "20 分钟宇宙科幻，「记忆清零」的设定撑起了整段逃亡。"
+    }
+  ]
+}

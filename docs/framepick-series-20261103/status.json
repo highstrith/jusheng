@@ -1,0 +1,28 @@
+{
+  "comment": "连载状态的编辑判定。basis 只作追溯记录，不写进作品表。判定依据：B 站四部用分P数（videos/pages 全为 1）与标题集号；抖音各部看标题集号与简介。总集数、续集关系未经核实的一律留空，页面就不显示，不猜。",
+  "updatedAt": "2026-11-03",
+  "films": {
+    "xianggu": { "completion": "ongoing", "basis": "集号标注「第 01 集」，后续集未上线" },
+    "jinhaitang": { "completion": "ongoing", "basis": "集号标注「序章『勇敢号』」，正片未上线" },
+    "yanran": { "completion": "ongoing", "basis": "集号标注「第 01 集」，后续集未上线" },
+    "baiguilu": { "completion": "ongoing", "basis": "B 站单 P，标题「第一集《狐仙接亲》」，后续集未上线" },
+    "nantianmen": { "completion": "ongoing", "basis": "集号标注「第 1 集」，后续集未上线" },
+    "xiangjianhuan": { "completion": "ongoing", "basis": "集号标注「第 1 集：钟山谶」，后续集未上线" },
+    "pinzi": { "completion": "standalone", "basis": "B 站单 P，完整短片" },
+    "jiyi1999": { "completion": "standalone", "basis": "B 站单 P，完整短片" },
+    "yanhua": { "completion": "standalone", "basis": "B 站单 P，完整短片" },
+    "yabiao": { "completion": "standalone", "basis": "单片，标题无集号" },
+    "tower32": { "completion": "standalone", "basis": "单片，标题无集号" },
+    "baizhou": { "completion": "standalone", "basis": "单片，标题无集号" },
+    "xingchendao": { "completion": "standalone", "basis": "单片，标题无集号" },
+    "ticheng": { "completion": "standalone", "basis": "单片，标题无集号" },
+    "ruguoai": { "completion": "standalone", "basis": "单片，标题无集号" },
+    "shijiazhuang": { "completion": "standalone", "basis": "音乐影像，单片" },
+    "vantier": { "completion": "standalone", "basis": "音乐影像，单片" },
+    "yagaoheshuaya": { "completion": "standalone", "basis": "B 站单 P，正片，标题无集号" },
+    "xunhuanlvan": { "completion": "standalone", "basis": "B 站单 P，标题标「正片」" },
+    "huanshoujinmen": { "completion": "standalone", "basis": "B 站单 P，标题标「正片」" },
+    "zuihoudeshiwu": { "completion": "standalone", "basis": "B 站单 P，正片；作者提到可能有后续但未上线" },
+    "qianshaocanxiang": { "completion": "standalone", "basis": "B 站单 P，20 分钟完整短片" }
+  }
+}
