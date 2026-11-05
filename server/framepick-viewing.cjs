@@ -19,7 +19,7 @@ const { createFileStore } = require('./framepick-store.cjs');
 
 const FILM_ID = /^[a-z0-9][a-z0-9-]{0,63}$/;
 const ACTIONS = new Set(['open', 'watch']);
-const SOURCES = new Set(['douyin', 'xiaohongshu', 'bilibili']);
+const SOURCES = new Set(['douyin', 'xiaohongshu', 'bilibili', 'youtube', 'x']);
 const MAX_WATCHED = 200;
 const MAX_HISTORY = 100;
 const MAX_EVENTS = 200;

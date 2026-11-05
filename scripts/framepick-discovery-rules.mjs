@@ -1,13 +1,16 @@
 // Screening rules for discovered films. Pure functions, no store access and no
 // side effects, so the CLI and the tests share exactly one implementation.
+import { overseasVideoKey } from '../server/framepick-source-url.cjs';
 const SOURCE_HOSTS = {
+  youtube: ['www.youtube.com', 'youtube.com', 'm.youtube.com', 'youtu.be'],
+  x: ['x.com', 'www.x.com', 'twitter.com', 'www.twitter.com'],
   bilibili: ['www.bilibili.com', 'bilibili.com', 'b23.tv'],
   douyin: ['www.douyin.com', 'douyin.com', 'v.douyin.com', 'www.iesdouyin.com'],
   xiaohongshu: ['www.xiaohongshu.com', 'xiaohongshu.com', 'xhslink.com'],
 };
 
 export const oneLine = (value) => String(value ?? '').replace(/\s+/g, ' ').trim();
-export const normalizeUrl = (value) => String(value || '').trim()
+export const normalizeUrl = (value) => overseasVideoKey(value) || String(value || '').trim()
   .replace(/^https?:\/\//, '').replace(/\/+$/, '').replace(/^\/+/, '').toLocaleLowerCase();
 
 export function parseRuntimeSeconds(value) {

@@ -145,7 +145,10 @@ async function verifyOne(candidate) {
   const url = candidate.url;
   const base = { id: candidate.id, title: candidate.title, url, source: candidate.source };
   if (candidate.source !== 'bilibili') {
-    return { ...base, verifiable: false, reason: `${SOURCES[candidate.source]?.label || candidate.source} 需登录才能复核，本轮只登记待核` };
+    const reason = ['youtube', 'x'].includes(candidate.source)
+      ? `${SOURCES[candidate.source].label} 需用浏览器核对原作者、完整正片和可见数据；未自动验证`
+      : `${SOURCES[candidate.source]?.label || candidate.source} 需登录才能复核，本轮只登记待核`;
+    return { ...base, verifiable: false, reason };
   }
   let html = '';
   try {

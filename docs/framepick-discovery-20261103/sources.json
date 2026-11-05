@@ -4,6 +4,18 @@
   "timezone": "Asia/Shanghai",
   "runtimeRangeSeconds": [180, 2400],
   "platforms": {
+    "youtube": {
+      "label": "YouTube",
+      "state": "支持候选与作品来源；通过原作者页面和真实浏览器核查，未接自动扫描",
+      "entry": "https://www.youtube.com/results?search_query={query}",
+      "how": "优先作者官网指向的完整正片，核实频道、时长、发布时间、可见播放和点赞；无数据就标待核，不推断字幕或授权"
+    },
+    "x": {
+      "label": "X",
+      "state": "支持候选与作品来源；搜索与详情可受登录限制，未接自动扫描",
+      "entry": "https://x.com/search?q={query}&f=video",
+      "how": "核对创作者原发帖和完整视频；帖子浏览量单独记录，不能充当视频播放量；优先追到作者完整版，排除预告和转发"
+    },
     "bilibili": {
       "label": "哔哩哔哩",
       "state": "公开搜索可用（未登录会话即可）",

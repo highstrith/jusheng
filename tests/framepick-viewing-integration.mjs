@@ -181,6 +181,21 @@ test('snapshots are sanitized: poster must be local img/ or http(s), control cha
   assert.equal(record.history.tangguo.poster, '');
 });
 
+test('overseas platform names survive account viewing history', async (t) => {
+  const { client } = await service(t);
+  const viewer = client();
+  await viewer.register();
+  for (const source of ['youtube', 'x']) {
+    const response = await viewer.request('/api/framepick/viewing/history', {
+      method: 'POST', body: { filmId: `overseas-${source}`, action: 'open', snapshot: { title: '海外正片', source } },
+    });
+    assert.equal(response.status, 200);
+    assert.equal(response.json.entry.source, source);
+  }
+  const restored = await viewer.request('/api/framepick/viewing');
+  assert.deepEqual(restored.json.history.map((row) => row.source).sort(), ['x', 'youtube']);
+});
+
 test('invalid film ids and actions are rejected', async (t) => {
   const { client } = await service(t);
   const viewer = client();

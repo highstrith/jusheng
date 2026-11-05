@@ -58,6 +58,25 @@ class OssCovers(unittest.TestCase):
     def tearDown(self):
         self.context.close()
 
+    def test_overseas_sources_filter_and_keep_original_watch_links(self):
+        fixtures = []
+        for source, label, url in [('youtube', 'YouTube', 'https://www.youtube.com/watch?v=V5AFQaEbHQU'),
+                                   ('x', 'X', 'https://x.com/artist/status/123456789')]:
+            fixtures.append(dict(id='test-' + source, title='测试正片 ' + label, source=source,
+                                 sourceLabel=label, sourceUrl=url, watchLabel='前往' + label,
+                                 genres=['scifi'], category='short', kind='科幻', runtime='03:15',
+                                 author='测试作者', description='测试正片', access='free', badge='免费精选',
+                                 cover=OSS + 'helong-640w.webp', coverWidth=640, coverHeight=480,
+                                 coverAlt='测试封面', scoreText='待评', curatedOrder=len(fixtures)))
+        self.context.route('**/films-data.js*', lambda route: route.fulfill(
+            content_type='application/javascript', body='window.FRAMEPICK_FILMS=' + json.dumps(fixtures)))
+        self.page.goto(self.base + 'library.html')
+        for film in fixtures:
+            self.page.select_option('#libSource', film['source'])
+            expect(self.page.locator('#libGrid .card:visible')).to_have_count(1)
+            expect(self.page.locator('#libGrid .source-name')).to_have_text(film['sourceLabel'])
+            expect(self.page.locator('#libGrid .watch')).to_have_attribute('href', film['sourceUrl'])
+
     def assert_oss_images(self, selector):
         images = self.page.locator(selector)
         self.assertGreater(images.count(), 0)

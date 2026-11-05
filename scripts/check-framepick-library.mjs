@@ -13,9 +13,10 @@ const asJson = process.argv.includes('--json');
 const siteDir = path.resolve(arg('--site') || '.');
 const indexPath = path.join(siteDir, 'index.html');
 
-// Only the three first-wave sources are accepted today; X, YouTube and Kuaishou
-// are not wired up (docs/framepick-prd-20261102.md section 10).
+// Validate the original platform hostname, including overseas originals.
 const SOURCES = {
+  youtube: { label: 'YouTube', hosts: ['www.youtube.com', 'youtube.com', 'm.youtube.com', 'youtu.be'] },
+  x: { label: 'X', hosts: ['x.com', 'www.x.com', 'twitter.com', 'www.twitter.com'] },
   douyin: { label: '抖音', hosts: ['www.douyin.com', 'douyin.com', 'v.douyin.com', 'www.iesdouyin.com'] },
   xiaohongshu: { label: '小红书', hosts: ['www.xiaohongshu.com', 'xiaohongshu.com', 'xhslink.com'] },
   bilibili: { label: '哔哩哔哩', hosts: ['www.bilibili.com', 'bilibili.com', 'b23.tv'] },

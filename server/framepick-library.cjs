@@ -8,8 +8,11 @@
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
+const { overseasVideoKey } = require('./framepick-source-url.cjs');
 
 const SOURCES = {
+  youtube: { label: 'YouTube', hosts: ['www.youtube.com', 'youtube.com', 'm.youtube.com', 'youtu.be'] },
+  x: { label: 'X', hosts: ['x.com', 'www.x.com', 'twitter.com', 'www.twitter.com'] },
   douyin: { label: '抖音', hosts: ['www.douyin.com', 'douyin.com', 'v.douyin.com', 'www.iesdouyin.com'] },
   xiaohongshu: { label: '小红书', hosts: ['www.xiaohongshu.com', 'xiaohongshu.com', 'xhslink.com'] },
   bilibili: { label: '哔哩哔哩', hosts: ['www.bilibili.com', 'bilibili.com', 'b23.tv'] },
@@ -270,6 +273,8 @@ function createLibraryStore(options = {}) {
   }
 
   function normalizeUrl(value) {
+    const overseas = overseasVideoKey(value);
+    if (overseas) return overseas;
     try {
       const url = new URL(value);
       return `${url.host}${url.pathname}`.replace(/\/+$/, '');

@@ -9,7 +9,7 @@
   const list = $('#meHistory');
   if (!list || !window.FramepickViewing) return;
 
-  const SOURCE_LABEL = { douyin: '抖音', xiaohongshu: '小红书', bilibili: '哔哩哔哩' };
+  const SOURCE_LABEL = { douyin: '抖音', xiaohongshu: '小红书', bilibili: '哔哩哔哩', youtube: 'YouTube', x: 'X' };
 
   function notify(message) {
     const notice = $('#notice');

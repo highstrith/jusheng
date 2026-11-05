@@ -29,7 +29,7 @@
   // 页面上的「N 部筛过的短片」跟着数据走，作品增减时不必再手改文案。
   for (const node of document.querySelectorAll('[data-film-total]')) node.textContent = String(films.length);
   // A film is watched where its author published it, so the labels follow the card.
-  const SOURCE_LABEL = { douyin: '抖音', xiaohongshu: '小红书', bilibili: '哔哩哔哩' };
+  const SOURCE_LABEL = { douyin: '抖音', xiaohongshu: '小红书', bilibili: '哔哩哔哩', youtube: 'YouTube', x: 'X' };
   const CATEGORY_LABEL = { film: '完整电影', series: '系列短剧', short: '剧情短片', ad: '商业广告', music: '音乐影像', experimental: '实验影像' };
   const controls = {
     q: $('#filmSearch'), genre: $('#genreFilter'), source: $('#sourceFilter'),

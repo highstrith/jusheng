@@ -93,7 +93,7 @@ test('a serialised episode without an episode note cannot be published', async (
 
 test('source, host, runtime, score and intake date are validated', async (t) => {
   const s = await store(t);
-  assert.throws(() => s.addFilm(film({ id: 'a', source: 'youtube' })), /来源必须是/);
+  assert.throws(() => s.addFilm(film({ id: 'a', source: 'unsupported' })), /来源必须是/);
   assert.throws(() => s.addFilm(film({ id: 'b', sourceUrl: 'https://www.douyin.com/video/1' })), /与来源/);
   assert.throws(() => s.addFilm(film({ id: 'c', sourceUrl: 'http://www.bilibili.com/video/BV1' })), /必须使用 HTTPS/);
   assert.throws(() => s.addFilm(film({ id: 'd', runtime: '18 分钟' })), /时长格式/);
@@ -101,6 +101,28 @@ test('source, host, runtime, score and intake date are validated', async (t) => 
   assert.throws(() => s.addFilm(film({ id: 'f', intakeDate: '2099-01-01' })), /未来日期/);
   assert.throws(() => s.addFilm(film({ id: 'g', genres: [] })), /至少需要一个题材/);
   assert.throws(() => s.addFilm(film({ id: 'Bad Id' })), /只能包含小写字母/);
+});
+
+test('YouTube and X films keep their real platform and reject lookalike hosts', async (t) => {
+  const s = await store(t);
+  for (const [id, source, sourceUrl] of [
+    ['yt', 'youtube', 'https://www.youtube.com/watch?v=V5AFQaEbHQU'],
+    ['ytshort', 'youtube', 'https://youtu.be/rPYp6O_xLqY'],
+    ['xpost', 'x', 'https://x.com/creator/status/123456789'],
+    ['twitter', 'x', 'https://twitter.com/creator/status/234567891'],
+  ]) assert.equal(s.addFilm(film({ id, title: id, source, sourceUrl })).source, source);
+  assert.throws(() => s.addFilm(film({ id: 'fake', source: 'youtube', sourceUrl: 'https://youtube.com.evil.test/watch?v=x' })), /与来源/);
+  assert.throws(() => s.addFilm(film({ id: 'wrong', source: 'x', sourceUrl: 'https://www.youtube.com/watch?v=x' })), /与来源/);
+});
+
+test('different YouTube videos are distinct and alternate links deduplicate', async (t) => {
+  const s = await store(t);
+  const add = (title, url) => s.addCandidate({ title, author: 'Creator', source: 'youtube', url });
+  add('Apex', 'https://www.youtube.com/watch?v=V5AFQaEbHQU');
+  add('Fountain', 'https://www.youtube.com/watch?v=rPYp6O_xLqY');
+  assert.throws(() => add('Same Apex', 'https://youtu.be/V5AFQaEbHQU?si=tracking'), /同一链接/);
+  assert.throws(() => add('Same Fountain', 'https://www.youtube.com/watch?feature=share&v=rPYp6O_xLqY'), /同一链接/);
+  assert.equal(s.listCandidates().length, 2);
 });
 
 test('the original release date is recorded separately from the intake date', async (t) => {

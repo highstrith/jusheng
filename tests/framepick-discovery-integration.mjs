@@ -23,6 +23,15 @@ const candidate = (overrides = {}) => ({
   aiEvidence: true, aiEvidenceNote: '原页简介写明 AI 制作', ...overrides,
 });
 
+test('overseas originals pass discovery while tutorials and spoof hosts stay rejected', () => {
+  for (const [source, url] of [['youtube', 'https://www.youtube.com/watch?v=V5AFQaEbHQU'], ['x', 'https://x.com/artist/status/123456789']]) {
+    const result = screenCandidate(candidate({ source, url }), { config });
+    assert.equal(result.status, 'accepted');
+    assert.equal(screenCandidate(candidate({ source, url, title: 'AI短片教程' }), { config }).status, 'rejected');
+  }
+  assert.equal(screenCandidate(candidate({ source: 'youtube', url: 'https://youtube.com.evil.test/watch?v=abc' }), { config }).status, 'rejected');
+});
+
 async function dataDir(t) {
   const dir = await mkdtemp(path.join(os.tmpdir(), 'framepick-discovery-'));
   t.after(() => rm(dir, { recursive: true, force: true }));

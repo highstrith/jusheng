@@ -100,7 +100,8 @@ test('CRE-02: intake refuses a submission without materials, AI usage or rights 
   assert.throws(() => s.addSubmission(submission({ applicationId: app.id, materials: {} })), /AI 使用情况说明不能为空/);
   assert.throws(() => s.addSubmission(submission({ applicationId: app.id, materials: { completeFilm: true, aiUsage: '有' } })), /权利材料说明不能为空/);
   assert.throws(() => s.addSubmission(submission({ applicationId: app.id, runtime: '42' })), /时长格式/);
-  assert.throws(() => s.addSubmission(submission({ applicationId: app.id, source: 'youtube' })), /来源必须是/);
+  assert.throws(() => s.addSubmission(submission({ applicationId: app.id, source: 'unsupported' })), /来源必须是/);
+  assert.throws(() => s.addSubmission(submission({ applicationId: app.id, source: 'youtube' })), /与来源/);
 });
 
 test('CRE-05: paid submissions require a complete film with confirmed rights', async (t) => {

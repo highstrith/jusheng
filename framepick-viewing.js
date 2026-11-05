@@ -71,7 +71,7 @@
       poster: String(row.poster || '').slice(0, 300),
       author: String(row.author || '').slice(0, 80),
       kind: String(row.kind || '').slice(0, 60),
-      source: ['douyin', 'xiaohongshu', 'bilibili'].includes(row.source) ? row.source : '',
+      source: ['douyin', 'xiaohongshu', 'bilibili', 'youtube', 'x'].includes(row.source) ? row.source : '',
       firstAt: String(row.firstAt || ''),
       lastAt: String(row.lastAt || ''),
       opens: Number.isSafeInteger(row.opens) && row.opens > 0 ? Math.min(row.opens, 99) : 1,

@@ -16,7 +16,7 @@
   const PAGE_QUERY = '(max-width: 760px)';
   function perPage() { return matchMedia(PAGE_QUERY).matches ? 6 : 12; }
   const GENRE_LABELS = { fantasy: '奇幻', scifi: '科幻', wuxia: '武侠', xianxia: '仙侠', urban: '都市', romance: '情感', healing: '治愈', thriller: '悬疑' };
-  const SOURCE_LABELS = { xiaohongshu: '小红书', douyin: '抖音', bilibili: '哔哩哔哩' };
+  const SOURCE_LABELS = { xiaohongshu: '小红书', douyin: '抖音', bilibili: '哔哩哔哩', youtube: 'YouTube', x: 'X' };
   const CATEGORY_LABELS = { film: '完整电影', series: '系列短剧', short: '剧情短片', ad: '商业广告', music: '音乐影像', experimental: '实验影像' };
 
   const state = { q: '', genre: 'all', source: 'all', category: 'all', sort: 'curated', page: 1 };
