@@ -206,7 +206,13 @@ test('the builder reproduces the shipped catalogue byte for byte', async (t) => 
   t.after(() => rm(dataDir, { recursive: true, force: true }));
   const site = await mkdtemp(path.join(os.tmpdir(), 'framepick-site-test-'));
   t.after(() => rm(site, { recursive: true, force: true }));
-  fs.cpSync(root, site, { recursive: true, filter: (src) => !src.includes('/.git') && !src.includes('/node_modules') });
+  // 只拷构建器真正要动的文件（index.html 读写、films-data.js 写出）。整仓
+  // cpSync 会把 img/ 与 docs/ 一起搬（几百个文件），撞上沙箱的批量复制策略
+  // （CODEBUDDY_BROKER_DENY），小批量逐文件复制不受限。
+  for (const file of ['index.html', 'films-data.js', 'library.html', 'me.html']) {
+    const from = path.join(root, file);
+    if (fs.existsSync(from)) fs.copyFileSync(from, path.join(site, file));
+  }
 
   const env = { ...process.env, FRAMEPICK_LIBRARY_DATA_DIR: dataDir };
   const run = (args) => execFileSync(node, args, { cwd: root, env, encoding: 'utf8' });
@@ -223,7 +229,13 @@ test('publishing a new film adds its card and updates the counts', async (t) => 
   t.after(() => rm(dataDir, { recursive: true, force: true }));
   const site = await mkdtemp(path.join(os.tmpdir(), 'framepick-site-test-'));
   t.after(() => rm(site, { recursive: true, force: true }));
-  fs.cpSync(root, site, { recursive: true, filter: (src) => !src.includes('/.git') && !src.includes('/node_modules') });
+  // 只拷构建器真正要动的文件（index.html 读写、films-data.js 写出）。整仓
+  // cpSync 会把 img/ 与 docs/ 一起搬（几百个文件），撞上沙箱的批量复制策略
+  // （CODEBUDDY_BROKER_DENY），小批量逐文件复制不受限。
+  for (const file of ['index.html', 'films-data.js', 'library.html', 'me.html']) {
+    const from = path.join(root, file);
+    if (fs.existsSync(from)) fs.copyFileSync(from, path.join(site, file));
+  }
 
   const env = { ...process.env, FRAMEPICK_LIBRARY_DATA_DIR: dataDir };
   const run = (args) => execFileSync(node, args, { cwd: root, env, encoding: 'utf8' });

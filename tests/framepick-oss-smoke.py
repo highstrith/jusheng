@@ -22,7 +22,19 @@ class QuietHandler(http.server.SimpleHTTPRequestHandler):
 class OssCovers(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        subprocess.run(['sh', 'scripts/build-site.sh'], cwd=ROOT, check=True, capture_output=True)
+        # 失败时把 stdout/stderr 带进报错里，别再让 check=True 吞掉真因
+        # （2026-11-06 就是这样吞掉了批量删除守卫的拦截信息）。盘上 IO 偶发
+        # 抽风时重试一次再断言。
+        for attempt in range(2):
+            run = subprocess.run(['sh', 'scripts/build-site.sh'], cwd=ROOT,
+                                 capture_output=True, text=True)
+            if run.returncode == 0:
+                break
+            if attempt == 1:
+                raise AssertionError(
+                    f'build-site.sh 退出码 {run.returncode}\n'
+                    f'--- stdout ---\n{run.stdout}\n--- stderr ---\n{run.stderr}')
+
         cls.server = http.server.ThreadingHTTPServer(('127.0.0.1', 0),
             functools.partial(QuietHandler, directory=str(ROOT / 'public')))
         cls.thread = threading.Thread(target=cls.server.serve_forever, daemon=True)

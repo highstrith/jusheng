@@ -14,7 +14,10 @@ PAGES="index.html library.html me.html"
 # 根目录里不是站点资源的 js（本地预览服务器）
 SKIP_JS="serve.js"
 
-rm -rf "$OUT"
+# 不 rm -rf 整个 public 再重建：沙箱的批量删除守卫会拦「一次删 >50 个文件」
+# （rm 直接退出码 2，自动化里必挂）。改为原地覆盖，再只删陈旧文件——正常
+# 重建时需要删的就是 0 个。exFAT 伴生的 ._* 文件留在原地不管：本地 public/
+# 只做预览与测试，部署产物在 CI 上从源码干净重建，不带伴生文件。
 mkdir -p "$OUT/img"
 
 for page in $PAGES; do
@@ -66,5 +69,41 @@ for file in Path(out).iterdir():
 print(f'  图片已切到 OSS：{len(images)} 个文件（含片库数据与分享卡）')
 PY
 
-find "$OUT" -name '._*' -type f -delete
+# 陈旧清理：只删本次产物清单里不存在的文件（改名/下架留下的旧封面等）。
+# ._* 伴生文件不在此列，一律留着；单次超过 45 个就停下报错，由人工分批清，
+# 免得撞上批量删除守卫。
+python3 - "$OUT" <<'PY'
+import os, sys
+out = sys.argv[1]
+skip_js = {'serve.js'}
+expected = {'.nojekyll', 'index.html', 'library.html', 'me.html'}
+for name in os.listdir('.'):
+    if name.endswith(('.js', '.css')) and name not in skip_js:
+        expected.add(name)
+for dirpath, dirnames, files in os.walk('img'):
+    rel_dir = os.path.relpath(dirpath, 'img')
+    if rel_dir == 'raw':
+        dirnames[:] = []
+        continue
+    for name in files:
+        if name.startswith('._'):
+            continue
+        rel = name if rel_dir == '.' else os.path.join(rel_dir, name)
+        expected.add(os.path.join('img', rel))
+stale = []
+for dirpath, _, files in os.walk(out):
+    for name in files:
+        if name.startswith('._'):
+            continue
+        rel = os.path.relpath(os.path.join(dirpath, name), out)
+        if rel not in expected:
+            stale.append(os.path.join(dirpath, name))
+if len(stale) > 45:
+    print('✗ 陈旧文件 %d 个超过 45，为避免批量删除守卫拦截，请人工分批清理：'
+          '%s' % (len(stale), ', '.join(stale[:5])), file=sys.stderr)
+    sys.exit(1)
+for path in stale:
+    os.remove(path)
+print(f'  陈旧文件清理 {len(stale)} 个')
+PY
 echo "  public/ 就绪"
