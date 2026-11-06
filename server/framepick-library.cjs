@@ -25,6 +25,12 @@ const ACCESS = { free: '免费精选', paid: '付费放映' };
 // 连载状态：单部完整 / 连载中 / 多集已完结。留空 = 尚未核实。
 const COMPLETIONS = ['standalone', 'ongoing', 'completed'];
 const COMPLETION_LABELS = { standalone: '单部', ongoing: '连载中', completed: '已完结' };
+// 成绩与荣誉。三类各自代表不同程度的确定性：
+//   honor     有据可查的奖项／官方认可，卡片上可以露标
+//   selection 参赛／入围／入选，来自创作者公开信息，只在详情里写清楚
+//   record    平台数据里程碑（播放、点赞），带快照日期，只在详情里出现
+const ACHIEVEMENT_KINDS = ['honor', 'selection', 'record'];
+const ACHIEVEMENT_LABELS = { honor: '荣誉', selection: '参赛与入选', record: '平台记录' };
 
 // Roadmap flow: 待核实 → 待看片 → 待补资料／不收录／通过 → 排期 → 上架 → 下架.
 const FILM_STATUSES = ['draft', 'reviewing', 'rejected', 'approved', 'scheduled', 'published', 'delisted'];
@@ -223,6 +229,23 @@ function validateFilmInput(input) {
     volume: text(input?.volume, '', { required: false, max: 60 }) || '',
     // 续集／前作关系，如「续作《星辰岛 2》」「《哑镖》续集」
     relation: text(input?.relation, '', { required: false, max: 120 }) || '',
+    // 成绩与荣誉：只写有出处的事实，平台数据必须带 asOf 快照日期，过期就更新而不是含糊过去。
+    achievements: ((list) => {
+      if (list === undefined || list === null) return [];
+      if (!Array.isArray(list)) fail('achievements 必须是数组');
+      if (list.length > 6) fail('成绩与荣誉最多 6 条');
+      return list.map((item, index) => {
+        const label = `第 ${index + 1} 条成绩`;
+        const kind = text(item?.kind, '', { required: false, max: 20 }) || 'record';
+        if (!ACHIEVEMENT_KINDS.includes(kind)) fail(`${label}的 kind 只能是 ${ACHIEVEMENT_KINDS.join(' / ')}`);
+        const source = text(item?.source, '', { required: false, max: 400 }) || '';
+        if (source && !/^https?:\/\//i.test(source)) fail(`${label}的出处必须是 http(s) 链接`);
+        const asOf = text(item?.asOf, '', { required: false, max: 10 }) || '';
+        if (asOf && !/^\d{4}-\d{2}-\d{2}$/.test(asOf)) fail(`${label}的日期要写成 YYYY-MM-DD`);
+        if (kind === 'record' && (!asOf || !source)) fail(`${label}是平台记录，必须带 asOf 与出处链接`);
+        return { kind, text: text(item?.text, label, { max: 60 }), source, asOf };
+      });
+    })(input?.achievements),
     originalReleaseDate: releaseDate(input?.originalReleaseDate),
     editorScore,
     intakeDate,
