@@ -1242,5 +1242,36 @@ window.FRAMEPICK_FILMS = [
     "statusLabel": "连载中",
     "intakeDate": "2026-11-05",
     "published": "2025-06-04"
+  },
+  {
+    "id": "yongzhemaoyi",
+    "title": "勇者的毛衣",
+    "kind": "奇幻 / 治愈",
+    "genres": [
+      "fantasy",
+      "healing"
+    ],
+    "category": "short",
+    "source": "bilibili",
+    "sourceLabel": "哔哩哔哩",
+    "access": "free",
+    "badge": "免费精选",
+    "runtime": "11:31",
+    "author": "一个人的AI电影工作室",
+    "description": "勇者和魔王都逃不过妈妈觉得他们冷。作者以毛衣为题，制作了这部原创 AI 动画短片。",
+    "recommendation": "",
+    "cover": "img/yongzhemaoyi-640w.webp",
+    "coverWidth": 640,
+    "coverHeight": 360,
+    "coverAlt": "《勇者的毛衣》原片封面",
+    "coverNote": "原片封面",
+    "sourceUrl": "https://www.bilibili.com/video/BV1itxd6QEUG",
+    "watchLabel": "前往哔哩哔哩",
+    "score": null,
+    "scoreText": "待评",
+    "completion": "standalone",
+    "statusLabel": "单部",
+    "intakeDate": "2026-11-06",
+    "published": "2026-11-04"
   }
 ];
