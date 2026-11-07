@@ -1,0 +1,56 @@
+{
+  "weeks": [
+    {
+      "week": "2026-W45",
+      "isoYear": 2026,
+      "isoWeek": 45,
+      "displayStart": "2026-11-02",
+      "displayEnd": "2026-11-08",
+      "start": "2026-10-26",
+      "end": "2026-11-01",
+      "films": [
+        {
+          "id": "baizhou",
+          "title": "白昼禁区",
+          "releaseDate": "2026-11-01",
+          "source": "douyin",
+          "runtime": "09:07",
+          "cover": "img/baizhou-640w.webp"
+        },
+        {
+          "id": "xiangjianhuan",
+          "title": "相见欢",
+          "releaseDate": "2026-11-01",
+          "source": "douyin",
+          "runtime": "12:36",
+          "cover": "img/xiangjianhuan-640w.webp"
+        },
+        {
+          "id": "yulin",
+          "title": "雨林中的秘密生物",
+          "releaseDate": "2026-11-01",
+          "source": "bilibili",
+          "runtime": "37:36",
+          "cover": "img/yulin-640w.webp"
+        },
+        {
+          "id": "benjaminweirdo",
+          "title": "怪人阿本",
+          "releaseDate": "2026-10-29",
+          "source": "bilibili",
+          "runtime": "03:16",
+          "cover": "img/benjaminweirdo-640w.webp"
+        },
+        {
+          "id": "tower32",
+          "title": "第32号塔",
+          "releaseDate": "2026-10-28",
+          "source": "douyin",
+          "runtime": "15:11",
+          "cover": "img/tower32-640w.webp"
+        }
+      ],
+      "candidateCount": 5
+    }
+  ]
+}

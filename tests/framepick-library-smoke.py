@@ -162,7 +162,7 @@ class FramepickLibrary(unittest.TestCase):
             for selector in ('#membership', '#cinema', '#cinemaPlan', '#prototypeBar', '#accountEntry', '#meEntry'):
                 expect(self.page.locator(selector)).to_be_hidden()
             nav = self.page.locator('nav[aria-label="站内导航"]')
-            expect(nav.get_by_role('link', name='本期推荐', exact=True)).to_have_attribute('href', '#rankings')
+            expect(nav.get_by_role('link', name='本周推荐', exact=True)).to_have_attribute('href', '#rankings')
             expect(nav).not_to_contain_text('观影计划')
             expect(self.page.locator('body')).not_to_contain_text('买一张小票', use_inner_text=True)
             expect(self.page.locator('body')).not_to_contain_text('橘生梦厂 VIP', use_inner_text=True)

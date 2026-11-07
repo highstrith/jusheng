@@ -54,6 +54,7 @@ node --test tests/framepick-creators-store-integration.mjs
 node scripts/check-framepick-library.mjs --site "$FRAMEPICK_SITE_ROOT"
 if [ -f "$HOME/.framepick/library/library.json" ]; then
   node scripts/build-framepick-library.mjs --site "$FRAMEPICK_SITE_ROOT" --check
+  node scripts/build-weekly-picks.mjs --check
 else
   echo "跳过片库一致性检查：还没有作品表（先跑 scripts/framepick-library-cli.mjs seed）"
 fi

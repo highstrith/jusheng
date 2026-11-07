@@ -17,6 +17,11 @@
 .pick-link:hover h3 { color:var(--gold) }
 .pick-reason { margin-top:10px;font-size:12px;line-height:1.9;color:var(--body);overflow-wrap:anywhere }
 .picks-note { margin-top:25px;padding-top:15px;border-top:1px solid var(--line);color:var(--muted);font-size:11px;line-height:1.8 }
+/* 周榜：期次说明、每部首发日期、无新作时的诚实空状态。 */
+.picks-caption { margin:-12px 0 22px;color:var(--muted);font-size:12px;line-height:1.8 }
+.pick-release { margin-top:9px;color:var(--gold);font-size:10px;letter-spacing:.02em;font-variant-numeric:tabular-nums }
+.picks-empty { margin:0;padding:28px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);color:var(--body);font-size:14px;line-height:2 }
+.picks-empty a { color:var(--gold);text-underline-offset:3px }
 @media(max-width:1000px) {
   .picks-grid { gap:18px }
   .pick-link h3 { font-size:20px }
@@ -33,6 +38,8 @@
   .pick-link h3 { font-size:21px }
   .pick-reason { margin-top:7px }
   .picks-note { margin-top:23px }
+  .picks-caption { margin:-8px 0 18px;font-size:11px }
+  .pick-release { margin-top:7px }
 }
 @media(max-width:360px) {
   .picks-grid { gap:23px 13px }

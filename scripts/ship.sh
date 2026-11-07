@@ -58,6 +58,12 @@ node scripts/framepick-cover-build.mjs || fail "封面构建失败，见上面�
 ./scripts/upload-cover-assets.sh || fail "OSS 上传或图片自检失败，停止发布"
 
 step "3/6 重建页面并校验"
+# 本周推荐按上一自然周首发的作品自动生成；片库数据不在仓库里，缺失时保留现有榜单。
+if [ -f "${FRAMEPICK_LIBRARY_FILE:-$HOME/.framepick/library/library.json}" ]; then
+  node scripts/build-weekly-picks.mjs || fail "周榜生成失败"
+else
+  echo "  跳过周榜生成：找不到片库数据"
+fi
 node scripts/build-framepick-library.mjs || fail "页面重建失败"
 node scripts/check-framepick-library.mjs || fail "卡片校验未通过"
 

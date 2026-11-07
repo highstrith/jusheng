@@ -43,3 +43,8 @@
   **不要点 Re-run failed jobs**（会在同一次运行里堆出第二个同名产物），直接新开一次运行。
 - 片库数据在 `~/.framepick/library/library.json`，是内容资产，不进仓库、不进产物。
 - 遇到测试失败或异常行为，先定位根因，再修改实现。
+
+## 周榜与自动上新（2026-11-07 起）
+
+- 首页「本周推荐」由 `scripts/build-weekly-picks.mjs` 生成，只收上一自然周首发的已上架作品；`index.html` 里 `WEEKLY_PICKS_START/END` 之间是生成区，禁止手改。要改规则就改脚本＋测试＋`产品需求.md`，不要直接编辑卡片。
+- 自动上新额度：抖音／哔哩哔哩每天各 5 部，其余平台各 2 部（两轮共享，按 `intakeDate` 计）。这条规则写在自动化任务 `7cf72559` 的 prompt 里，不在仓库代码里；`originalReleaseDate` 必须按候选 `publishedAt` 如实填写，它决定作品能否进周榜。
