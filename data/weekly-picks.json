@@ -58,6 +58,65 @@
         }
       ],
       "candidateCount": 5
+    },
+    {
+      "week": "2026-W46",
+      "isoYear": 2026,
+      "isoWeek": 46,
+      "displayStart": "2026-11-09",
+      "displayEnd": "2026-11-15",
+      "start": "2026-11-02",
+      "end": "2026-11-08",
+      "films": [
+        {
+          "id": "xushilu",
+          "title": "虚蚀录",
+          "releaseDate": "2026-11-08",
+          "source": "bilibili",
+          "runtime": "10:17",
+          "cover": "img/xushilu-640w.webp"
+        },
+        {
+          "id": "suisuipingan",
+          "title": "岁岁平安",
+          "releaseDate": "2026-11-08",
+          "source": "bilibili",
+          "runtime": "08:15",
+          "cover": "img/suisuipingan-640w.webp"
+        },
+        {
+          "id": "meihua-zhiying",
+          "title": "梅花之影",
+          "releaseDate": "2026-11-07",
+          "source": "bilibili",
+          "runtime": "24:44",
+          "cover": "img/meihua-zhiying-640w.webp"
+        },
+        {
+          "id": "yangqimudi",
+          "title": "氧气墓地",
+          "releaseDate": "2026-11-06",
+          "source": "bilibili",
+          "runtime": "09:33",
+          "cover": "img/yangqimudi-640w.webp"
+        },
+        {
+          "id": "claude-goodnight",
+          "title": "CLAUDE：好孩子，晚安",
+          "releaseDate": "2026-11-06",
+          "source": "bilibili",
+          "runtime": "15:39",
+          "cover": "img/claude-goodnight-640w.webp"
+        }
+      ],
+      "supplement": [
+        {
+          "id": "sairenzhige",
+          "title": "塞壬之歌：奥德修斯的抉择",
+          "releaseDate": "2026-09-03"
+        }
+      ],
+      "candidateCount": 20
     }
   ]
 }
