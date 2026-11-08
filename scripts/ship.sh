@@ -38,6 +38,30 @@ done
 step() { printf '\n\033[1m▸ %s\033[0m\n' "$1"; }
 fail() { printf '\033[31m✗ %s\033[0m\n' "$1" >&2; exit 1; }
 
+# 这一版上线了没有？用产物比对，不靠 Actions API —— 未认证的 API 每小时只有 60 次，
+# 自动化两轮一跑就撞限流；拿不到状态时 `set -u` 会把脚本崩在 case 上（2026-11-08 真实踩过）。
+#   1 = 线上 index.html 与本地产物字节一致（最严格）
+#   2 = 页面结构一致（卡片数、周榜卡数、轮播张数），多半只是图片 CDN 地址不同
+#   0 = 还是旧版 / 没拿到
+check_deploy() {
+  curl -s --compressed "https://highstrith.github.io/jusheng/?cb=$(date +%s)" \
+    -o /tmp/jusheng-live.html || { echo 0; return; }
+  python3 - "$1" 2>/dev/null <<'PY' || echo 0
+import hashlib, re, sys
+live = open('/tmp/jusheng-live.html', 'rb').read()
+local = open(sys.argv[1], 'rb').read()
+if hashlib.sha256(live).hexdigest() == hashlib.sha256(local).hexdigest():
+    print(1)
+    raise SystemExit
+def shape(buf):
+    text = buf.decode('utf-8', 'replace')
+    return (len(re.findall(r'<article class="card"', text)),
+            len(re.findall(r'<li class="pick-card', text)),
+            len(re.findall(r'class="hero-slide', text)))
+print(2 if shape(live) == shape(local) else 0)
+PY
+}
+
 step "0/6 检查环境"
 command -v node >/dev/null || fail "找不到 node"
 echo "  工作目录 $(pwd)"
@@ -102,26 +126,36 @@ fi
 
 if [ "$PUSHED" = "1" ]; then
   git push origin main 2>&1 | tail -1 || fail "推送失败"
-  for _ in $(seq 1 15); do
+  STATUS=""; LEVEL=0
+  for i in $(seq 1 15); do
     sleep 20
-    S=$(curl -s "https://api.github.com/repos/highstrith/jusheng/actions/runs?per_page=1" \
-      | python3 -c "import json,sys; d=json.loads(sys.stdin.read(),strict=False)['workflow_runs'][0]; print(d['status'], d['conclusion'])" 2>/dev/null)
-    echo "  部署：$S"
-    case "$S" in *success*|*failure*) break;; esac
+    LEVEL=$(check_deploy public/index.html)
+    if [ "$LEVEL" = "1" ]; then
+      echo "  部署：线上已是这一版（第 ${i} 次检查）"; break
+    fi
+    # API 只当辅助信息：限流拿不到就显示「检查中」，不影响判断。
+    STATUS=$(curl -s "https://api.github.com/repos/highstrith/jusheng/actions/runs?per_page=1" \
+      | python3 -c "import json,sys; d=json.loads(sys.stdin.read(),strict=False)['workflow_runs'][0]; print(d['status'], d['conclusion'])" 2>/dev/null || true)
+    echo "  部署：${STATUS:-检查中}"
+    case "$STATUS" in
+      *failure*) fail "部署失败（$STATUS）。到 Actions 看日志；若是 github-pages 产物报错，别点 Re-run failed jobs，直接 Run workflow 新开一次运行" ;;
+    esac
   done
-  case "$S" in
-    *success*) ;;
-    *) fail "部署未成功（状态：$S）。到 Actions 看日志；若是 github-pages 产物报错，别点 Re-run failed jobs，直接 Run workflow 新开一次运行" ;;
+  case "$LEVEL" in
+    1) ;;
+    2) echo "  ! 线上内容已更新，但字节与本地产物不同（多半是图片 CDN 地址差异），按已上线处理" ;;
+    *) fail "5 分钟内线上还是旧版（部署可能仍在排队，或这一版构建失败）。到 Actions 确认：若 github-pages 报产物重复，别点 Re-run failed jobs，直接 Run workflow 新开一次运行" ;;
   esac
 fi
 
-sleep 5
-curl -s "https://highstrith.github.io/jusheng/?cb=$(date +%s)" -o /tmp/jusheng-live.html
+sleep 2
+curl -s --compressed "https://highstrith.github.io/jusheng/?cb=$(date +%s)" -o /tmp/jusheng-live.html
 python3 - <<'PY'
 import re
 h = open('/tmp/jusheng-live.html', encoding='utf-8').read()
 cards = len(re.findall(r'<article class="card"', h))
-print(f'  线上首页：{cards} 张卡片 · 标题含「橘生梦厂」：{"橘生梦厂" in h}')
+picks = len(re.findall(r'<li class="pick-card', h))
+print(f'  线上首页：{cards} 张卡片 · 本周推荐 {picks} 张 · 标题含「橘生梦厂」：{"橘生梦厂" in h}')
 PY
 
 printf '\n\033[32m完成\033[0m\n'
