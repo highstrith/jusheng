@@ -11,13 +11,16 @@
 //   · 窗口 = 上一自然周（周一 00:00 至周日 23:59，北京时间），本周展示、下周一切换。
 //   · 「优秀」= 已通过编辑终审上架（status=published）的作品；上架本身就是筛选，
 //     不编造评分、播放量或排名依据。按 curatedOrder（编辑精选顺序）排列，最多 5 部。
-//   · 不足 5 部就如实展示实际数量，0 部显示空状态；不从窗口外借片凑数。
+//   · 首名被首屏大图占用，标题下的卡片会少一张；不足 5 张时从片库「窗口之前已上架」
+//     的作品里按收录时间倒序补选，卡片标「补选」、日期照实，不冒充上周新片。
+//     本期一部都没有时仍显示空状态：那种情况下补五部旧片才是真的凑数。
 //   · 期次用本周 ISO 周数，页面上的两个 <time> 是「影片首发窗口」，不冒充影片上线时间。
 //
 // 片库数据在仓库外：~/.framepick/library/library.json（可用 FRAMEPICK_LIBRARY_FILE 覆盖）。
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { resolveHeroId } from './lib/feature.mjs';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const arg = (name) => {
@@ -31,6 +34,8 @@ const archivePath = path.join(repoRoot, 'data', 'weekly-picks.json');
 const libraryPath = process.env.FRAMEPICK_LIBRARY_FILE
   || path.join(process.env.FRAMEPICK_LIBRARY_DATA_DIR || path.join(process.env.HOME || '', '.framepick', 'library'), 'library.json');
 const MAX_PICKS = 5;
+// 标题下至少要铺满五张卡：首名被首屏大图占用时，从片库最近收录里补选（卡片标「补选」）。
+const MIN_CARDS = 5;
 const START = '<!-- WEEKLY_PICKS_START -->';
 const END = '<!-- WEEKLY_PICKS_END -->';
 
@@ -106,34 +111,51 @@ function totalRuntime(films) {
 }
 
 function pickCard(film, index) {
-  const rank = pad(index + 1);
+  // 名次来自榜单真实排名：首名被大图占用时，列表不会从 01 重新数。
+  // 补选的作品没有名次，用「＋」占位——写 06 就是在编一个不存在的位置。
+  const bonus = Boolean(film.bonus);
+  const place = bonus ? null : Number(film.rank) || index + 1;
+  const rank = bonus ? '＋' : pad(place);
   const title = String(film.title || '').trim();
   const href = String(film.sourceUrl || '').trim();
   const cover = String(film.cover || '').trim();
   const coverAlt = String(film.coverAlt || `${title}原片封面`).trim();
   const release = String(film.originalReleaseDate || '').trim();
-  return `      <li class="pick-card">
-        <a class="pick-link" data-open-film="${escapeHtml(film.id)}" href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer" aria-label="第 ${index + 1} 名：查看《${escapeHtml(title)}》">
+  // 补选的作品不是上周首发，卡片上要说清楚，别让人以为它是新片。
+  const badge = bonus ? '<span class="pick-bonus">补选</span>' : '';
+  const label = bonus ? `补选：查看《${escapeHtml(title)}》` : `第 ${place} 名：查看《${escapeHtml(title)}》`;
+  return `      <li class="pick-card${bonus ? ' is-bonus' : ''}">
+        <a class="pick-link" data-open-film="${escapeHtml(film.id)}" href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer" aria-label="${label}">
           <div class="pick-cover"><img src="${escapeHtml(cover)}" width="${Number(film.coverWidth) || 640}" height="${Number(film.coverHeight) || 480}" alt="${escapeHtml(coverAlt)}" loading="lazy" decoding="async"></div>
           <span class="pick-meta"><span class="pick-rank" aria-hidden="true">${rank}</span><span class="pick-genre">${escapeHtml(genreOf(film))}</span><span class="pick-runtime">${escapeHtml(film.runtime || '')}</span></span><h3>${escapeHtml(title)}</h3>
         </a>
-        <p class="pick-release"><time datetime="${escapeHtml(release)}">${shortDate(release)}</time> 首发 · ${escapeHtml(sourceLabels[film.source] || film.source || '')}</p>${reasonOf(film) ? `\n        <p class="pick-reason">${escapeHtml(reasonOf(film))}</p>` : ''}
+        <p class="pick-release"><time datetime="${escapeHtml(release)}">${shortDate(release)}</time> 首发 · ${escapeHtml(sourceLabels[film.source] || film.source || '')}${badge}</p>${reasonOf(film) ? `\n        <p class="pick-reason">${escapeHtml(reasonOf(film))}</p>` : ''}
       </li>`;
 }
 
-function sectionHtml(current, films) {
+function sectionHtml(current, films, hero = null, supplement = []) {
   const { start, end } = current;
   const label = `${current.isoYear} · 第 ${current.isoWeek} 周`;
   const range = `<div class="picks-edition-range" aria-label="本期收录 2026 年 ${Number(start.slice(5, 7))} 月 ${Number(start.slice(8, 10))} 日至 ${Number(end.slice(5, 7))} 月 ${Number(end.slice(8, 10))} 日首发的作品"><time datetime="${start}">${shortDate(start)}</time><span>—</span><time datetime="${end}">${shortDate(end)}</time></div>`;
   const caption = `    <p class="picks-caption">上一周首发的新作 · 本周编选 · 每周一更新</p>`;
   const runtime = totalRuntime(films);
-  const body = films.length
-    ? `    <ol class="picks-grid" role="list" aria-label="本周推荐排名">
-${films.map(pickCard).join('\n')}
+  // 补选排在入选之后：先读完这一期真正的选择，再看片库里顺手补上的几部。
+  const cards = [...films, ...supplement];
+  const body = cards.length
+    ? `    <ol class="picks-grid" role="list" aria-label="${supplement.length ? '本周推荐作品' : '本周推荐排名'}">
+${cards.map(pickCard).join('\n')}
     </ol>`
-    : `    <p class="picks-empty">上一周（${shortDate(start)}—${shortDate(end)}）没有通过编选的新作。榜单不凑数，先去片库看看：<a href="#entries">探索全部作品</a></p>`;
-  const note = films.length
-    ? `每周一更新，本期收录上一周（${shortDate(start)}—${shortDate(end)}）首发的 ${films.length} 部作品，按首发日期排列。${runtime ? `合计 ${runtime}。` : ''}`
+    : hero
+      // 本期只有一部（或首名独占大图）：不再凑一个空列表。
+      ? `    <p class="picks-empty">本期就这一部，已经放在页首。下周见。</p>`
+      : `    <p class="picks-empty">上一周（${shortDate(start)}—${shortDate(end)}）没有通过编选的新作。榜单不凑数，先去片库看看：<a href="#entries">探索全部作品</a></p>`;
+  const picked = films.length + (hero ? 1 : 0);
+  // 时长只算这一期入选的：补选不是本周作品，混进来就成了假数据。
+  const head = hero
+    ? `本期收录上一周（${shortDate(start)}—${shortDate(end)}）首发的 ${picked} 部作品，首推《${hero.title}》见页首${films.length ? `，其余 ${films.length} 部按首发日期排列` : ''}${runtime ? `，共 ${runtime}` : ''}`
+    : `本期收录上一周（${shortDate(start)}—${shortDate(end)}）首发的 ${picked} 部作品，按首发日期排列${runtime ? `，合计 ${runtime}` : ''}`;
+  const note = picked
+    ? `每周一更新，${head}${supplement.length ? `；末尾 ${supplement.length} 部补选自片库，标「补选」，不是上一周首发的新作` : ''}。`
     : `每周一更新。本期没有可推荐的上周新作，往期作品仍在片库里。`;
   return `${START}
   <section class="rankings wrap editorial-picks" id="rankings" aria-labelledby="rankingsTitle">
@@ -167,6 +189,29 @@ candidates.sort((a, b) => {
   return order || String(a.id).localeCompare(String(b.id));
 });
 const picks = candidates.slice(0, MAX_PICKS);
+// 首名在大图上，榜单里就不再列一次：同一部片不该首屏出现两遍。
+const heroId = resolveHeroId({
+  siteDir: repoRoot,
+  picks: picks.map((film) => film.id),
+  publishedIds: new Set(published.map((film) => film.id)),
+});
+const ranked = picks.map((film, index) => ({ ...film, rank: index + 1 }));
+const heroFilm = ranked.find((film) => film.id === heroId) || null;
+const listed = heroFilm ? ranked.filter((film) => film.id !== heroFilm.id) : ranked;
+// 补选池：窗口之前就已上架的作品，按收录时间倒序。窗口之后（本周新收）的不进来，
+// 它们下周才该被评，提前塞进这一期等于插队。
+const inPicks = new Set(ranked.map((film) => film.id));
+const supplementPool = published
+  .filter((f) => {
+    const date = String(f.originalReleaseDate || '');
+    return /^\d{4}-\d{2}-\d{2}$/.test(date) && date < start && f.id !== heroId && !inPicks.has(f.id);
+  })
+  .sort((a, b) => String(b.intakeDate || '').localeCompare(String(a.intakeDate || ''))
+    || String(a.id).localeCompare(String(b.id)));
+// 只补空缺：首名占掉大图后标题下不足五张时，从补选池顺补，不改名次。
+const supplement = picks.length
+  ? supplementPool.slice(0, Math.max(0, MIN_CARDS - listed.length)).map((film) => ({ ...film, bonus: true }))
+  : [];
 const current = {
   week: `${isoYear}-W${pad(isoWeekNumber)}`,
   isoYear, isoWeek: isoWeekNumber,
@@ -176,6 +221,8 @@ const current = {
     id: f.id, title: f.title, releaseDate: f.originalReleaseDate,
     source: f.source, runtime: f.runtime || '', cover: f.cover,
   })),
+  // 补选只属于页面展示：归档里单列一项，别混进「上一周首发」的记录里。
+  supplement: supplement.map((f) => ({ id: f.id, title: f.title, releaseDate: f.originalReleaseDate })),
   candidateCount: candidates.length,
 };
 
@@ -185,7 +232,7 @@ if (!marker.test(source)) {
   console.error('✗ index.html 找不到周榜生成标记，请检查 WEEKLY_PICKS_START / END');
   process.exit(2);
 }
-const nextSection = sectionHtml(current, picks);
+const nextSection = sectionHtml(current, listed, heroFilm, supplement);
 const nextHtml = source.replace(marker, nextSection);
 
 const archive = fs.existsSync(archivePath) ? JSON.parse(fs.readFileSync(archivePath, 'utf8')) : { weeks: [] };
@@ -200,12 +247,13 @@ const archiveStale = nextArchive !== archiveCurrent;
 const report = {
   today, week: current.week, displayWindow: [current.displayStart, current.displayEnd],
   releaseWindow: [start, end], candidates: candidates.length, picks: current.films.map((f) => f.id),
+  supplement: current.supplement.map((f) => f.id), cards: listed.length + supplement.length,
   pageStale, archiveStale,
 };
 
 if (checkOnly) {
   if (asJson) console.log(JSON.stringify(report, null, 2));
-  else console.log(`周榜 ${current.week}：上一周 ${shortDate(start)}—${shortDate(end)} 首发 ${candidates.length} 部，上榜 ${picks.length} 部 · ${pageStale || archiveStale ? '页面或归档需要重建' : '已是最新'}`);
+  else console.log(`周榜 ${current.week}：上一周 ${shortDate(start)}—${shortDate(end)} 首发 ${candidates.length} 部，上榜 ${picks.length} 部${supplement.length ? `，补选 ${supplement.length} 部` : ''} · ${pageStale || archiveStale ? '页面或归档需要重建' : '已是最新'}`);
   process.exit(pageStale || archiveStale ? 1 : 0);
 }
 
@@ -218,5 +266,6 @@ if (asJson) console.log(JSON.stringify(report, null, 2));
 else {
   console.log(`周榜 ${current.week}：本期展示 ${shortDate(current.displayStart)}—${shortDate(current.displayEnd)}，收录上一周 ${shortDate(start)}—${shortDate(end)} 首发的 ${candidates.length} 部，上榜 ${picks.length} 部`);
   for (const film of current.films) console.log(`  ${shortDate(film.releaseDate)}  ${film.title}`);
+  for (const film of current.supplement) console.log(`  ${shortDate(film.releaseDate)}  ${film.title}  （补选，不是上周首发）`);
   console.log(pageStale || archiveStale ? '  已写入 index.html 与 data/weekly-picks.json' : '  页面与归档无需改动');
 }

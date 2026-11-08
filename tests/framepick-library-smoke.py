@@ -44,6 +44,10 @@ class FramepickLibrary(unittest.TestCase):
     def open_paged(self, query=''):
         self.page.goto(BASE + fp.url(query), wait_until='load')
 
+    def grid_id(self, index=0):
+        """首页只铺最近收录，具体是哪几部由数据决定；需要「页面上存在的片」时问页面要。"""
+        return self.page.locator('#filmGrid [data-film]').nth(index).get_attribute('data-film')
+
     def cards(self):
         return self.page.locator('#filmGrid [data-film]:visible')
 
@@ -52,97 +56,145 @@ class FramepickLibrary(unittest.TestCase):
         return self.page.locator(f'#filmGrid [data-film][data-{attr}="{value}"]').count()
 
     def test_search_category_and_source(self):
-        self.open()
-        total = self.cards().count()
-        self.assertGreaterEqual(total, 3)
-        self.page.locator('#filmSearch').fill('Mx-Shell')
-        expect(self.cards()).to_have_count(1)
-        expect(self.cards()).to_contain_text('烬海棠')
-        self.page.locator('#filmSearch').fill('')
-        # 题材计数不写死：片库增补后同题材可能不止一部（燕然、西游拾遗录都是仙侠）。
-        xianxia = self.page.locator('#filmGrid [data-film]').evaluate_all(
-            "els => els.filter(e => e.dataset.genres.split(' ').includes('xianxia')).length")
-        self.page.locator('#genreFilter').select_option('xianxia')
-        expect(self.cards()).to_have_count(xianxia)
-        expect(self.page.locator('#filmGrid [data-film="yanran"]')).to_be_visible()
-        self.page.locator('#genreFilter').select_option('all')
-        expect(self.cards()).to_have_count(total)
-        self.page.locator('#sourceFilter').select_option('bilibili')
-        expect(self.cards()).to_have_count(self.grid_count('source', 'bilibili'))
-        self.page.locator('#sourceFilter').select_option('douyin')
-        expect(self.cards()).to_have_count(self.grid_count('source', 'douyin'))
-        self.page.locator('#sourceFilter').select_option('all')
-        expect(self.cards()).to_have_count(total)
-        self.page.locator('button[data-category="series"]').click()
-        expect(self.cards()).to_have_count(self.grid_count('category', 'series'))
-        self.page.locator('button[data-category="short"]').click()
-        expect(self.cards()).to_have_count(self.grid_count('category', 'short'))
-        self.page.locator('button[data-category="all"]').click()
-        expect(self.cards()).to_have_count(total)
+        # 搜索与筛选在 library.html：首页只铺编辑精选，完整片库在那边按题材／来源／类型筛。
+        self.page.goto(BASE + fp.url('library.html'), wait_until='load')
+        cards = self.page.locator('#libGrid .card')
+        self.assertGreaterEqual(cards.count(), 3)
+        self.page.locator('#libSearch').fill('Mx-Shell')
+        expect(cards).to_have_count(1)
+        expect(cards).to_contain_text('烬海棠')
+        self.page.locator('#libSearch').fill('')
+        # 题材用例不写死数量：片库增补后同题材可能不止一部（燕然、西游拾遗录都是仙侠）。
+        self.page.locator('#libGenre').select_option('xianxia')
+        expect(self.page.locator('#libGrid .card', has_text='燕然')).to_have_count(1)
+        genres = self.page.locator('#libGrid .card').evaluate_all(
+            "els => els.length")
+        self.assertGreaterEqual(genres, 1)
+        self.page.locator('#libGenre').select_option('all')
+        self.page.locator('#libSource').select_option('bilibili')
+        hrefs = self.page.locator('#libGrid .watch').evaluate_all('els => els.map(e => e.href)')
+        self.assertTrue(hrefs and all('bilibili.com' in href for href in hrefs), hrefs)
+        self.page.locator('#libSource').select_option('all')
+        self.page.locator('#libTabs button[data-category="series"]').click()
+        expect(self.page.locator('#libTabs button[data-category="series"]')).to_have_attribute('aria-pressed', 'true')
+        expect(self.page.locator('#libCount')).to_contain_text('共')
+        self.page.locator('#libTabs button[data-category="all"]').click()
+        expect(self.page.locator('#libCount')).to_contain_text('第 1–')
 
     def test_home_stays_one_screen_and_links_to_the_full_library(self):
-        # 作品会持续增长，首页一页一屏并带页码，完整列表另有 library.html。
+        # 首页只铺编辑精选这一屏，作品涨到几百部也不会把首页撑长；完整片库在 library.html。
         self.open_paged()
-        total = self.page.locator('#filmGrid [data-film]').count()
-        self.assertEqual(self.cards().count(), 12, '首页每页 12 部')
-        expect(self.page.locator('#resultCount')).to_contain_text('第 1–12 部')
-        expect(self.page.locator('#filmPager')).to_be_visible()
+        total = int(self.page.locator('#filmGrid').get_attribute('data-total'))
+        self.assertEqual(self.cards().count(), 9, '首页只铺最近收录 9 部')
+        expect(self.page.locator('#filmPager')).to_be_hidden()
+        expect(self.page.locator('#resultCount')).to_contain_text(f'共 {total} 部 · 首页收录 9 部')
+        expect(self.page.locator('[data-film-total]').first).to_have_text(str(total))
         expect(self.page.locator('#loadMore')).to_be_visible()
         link = self.page.locator('#loadMoreLink')
         expect(link).to_have_attribute('href', 'library.html')
         expect(link).to_contain_text(f'去片库看全部 {total} 部')
 
-        # 首页翻页：第二页换一批作品，且不重复第一页。
-        first_ids = self.cards().evaluate_all('cards=>cards.map(c=>c.dataset.film)')
-        self.page.locator('#filmPager button', has_text='2').first.click()
-        second_ids = self.cards().evaluate_all('cards=>cards.map(c=>c.dataset.film)')
-        self.assertEqual(len(set(first_ids) & set(second_ids)), 0, '翻页后不该重复第一页的作品')
-        expect(self.page.locator('#resultCount')).to_contain_text('第 2 / ')
-
-        # 换筛选条件后回到第一页，避免停在越界页。
-        self.page.locator('#genreFilter').select_option('scifi')
-        self.assertNotIn('第 2 /', self.page.locator('#resultCount').text_content())
-
         self.page.goto(BASE + fp.url('library.html'), wait_until='load')
         expect(self.page.locator('#libTitle')).to_contain_text('全部作品')
         expect(self.page.locator('#libMeta')).to_contain_text(f'共 {total} 部')
         expect(self.page.locator('#libCount')).to_contain_text(f'共 {total} 部')
-        first_page = self.page.locator('#libGrid .card').count()
-        self.assertLessEqual(first_page, 12, '片库页每页不超过 12 部')
-        expect(self.page.locator('#libPagerTop')).to_be_visible()
+        self.assertLessEqual(self.page.locator('#libGrid .card').count(), 12, '片库页每页不超过 12 部')
         if total > 12:
+            expect(self.page.locator('#libPagerTop')).to_be_visible()
             self.page.locator('#libPagerTop button', has_text='2').first.click()
-            self.assertGreater(self.page.locator('#libGrid .card').count(), 0)
             expect(self.page.locator('#libCount')).to_contain_text('第 2 / ')
         # 筛选后页码回到第一页，避免停在越界页。
         self.page.locator('#libGenre').select_option('scifi')
-        expect(self.page.locator('#libCount')).to_contain_text('第 1')
+        expect(self.page.locator('#libCount')).to_contain_text('第 1–')
 
-    def test_home_search_shows_all_matches_without_paging(self):
-        # 搜索是明确意图，搜到了却因分页看不到是坏体验。
+    def test_per_page_choice_keeps_the_list_and_the_pager_honest(self):
+        # 每页显示多少部由读者自己定：换了就回第一页，页码和「第几到第几部」一起重算。
+        self.page.goto(BASE + fp.url('library.html'), wait_until='load')
+        cards = self.page.locator('#libGrid .card')
+        total = int(re.search(r'共 (\d+) 部', self.page.locator('#libMeta').inner_text()).group(1))
+        self.assertIn(cards.count(), (6, 12), '默认每页数量跟着屏幕走')
+        self.page.locator('#libPer').select_option('24')
+        expect(cards).to_have_count(24)
+        expect(self.page.locator('#libCount')).to_contain_text('第 1–24 部')
+        # 翻到第 2 页再改每页数量，必须回到第一页，不能停在越界页上看空。
+        self.page.locator('#libPager button', has_text='2').first.click()
+        expect(self.page.locator('#libCount')).to_contain_text('第 25–48 部')
+        self.page.locator('#libPer').select_option('12')
+        expect(cards).to_have_count(12)
+        expect(self.page.locator('#libCount')).to_contain_text('第 1–12 部')
+        # 「全部」一页铺完，上下两条翻页条都收起来。
+        self.page.locator('#libPer').select_option('all')
+        self.assertEqual(cards.count(), total)
+        expect(self.page.locator('#libPager')).to_be_empty()
+        expect(self.page.locator('#libPagerTop')).to_be_empty()
+        expect(self.page.locator('#libCount')).to_contain_text(f'第 1–{total} 部，共 {total} 部')
+
+    def test_per_page_accepts_any_number_by_hand(self):
+        # 预设之外还能自己填：越界夹到 1–200，填不出数就退回原来的值，换回预设就收起输入框。
+        self.page.goto(BASE + fp.url('library.html'), wait_until='load')
+        cards = self.page.locator('#libGrid .card')
+        custom = self.page.locator('#libPerCustom')
+        expect(custom).to_be_hidden()
+        self.page.locator('#libPer').select_option('custom')
+        expect(custom).to_be_visible()
+        custom.fill('30')
+        custom.press('Enter')
+        expect(cards).to_have_count(30)
+        expect(self.page.locator('#libCount')).to_contain_text('第 1–30 部')
+        custom.fill('999')
+        custom.press('Enter')
+        expect(custom).to_have_value('200')
+        custom.fill('')
+        custom.press('Enter')
+        expect(custom).to_have_value('200')
+        self.page.locator('#libPer').select_option('12')
+        expect(custom).to_be_hidden()
+        expect(cards).to_have_count(12)
+
+    def test_per_page_choice_travels_in_the_url(self):
+        # 每页数量认地址参数：分享出去的链接打开就是同一个视图，坏值退回自动。
+        self.page.goto(BASE + fp.url('library.html?per=24'), wait_until='load')
+        expect(self.page.locator('#libPer')).to_have_value('24')
+        expect(self.page.locator('#libGrid .card')).to_have_count(24)
+        # 预设之外的数字当成自定义：?per=30 打开就是自定义 30 部。
+        self.page.goto(BASE + fp.url('library.html?per=30'), wait_until='load')
+        expect(self.page.locator('#libPer')).to_have_value('custom')
+        expect(self.page.locator('#libPerCustom')).to_have_value('30')
+        expect(self.page.locator('#libGrid .card')).to_have_count(30)
+        self.page.goto(BASE + fp.url('library.html?per=bogus'), wait_until='load')
+        expect(self.page.locator('#libPer')).to_have_value('auto')
+        self.assertIn(self.page.locator('#libGrid .card').count(), (6, 12))
+
+    def test_home_search_hands_off_to_the_library(self):
+        # 首页不再自带片库搜索，但搜索这一下不能丢：输入后直接落到片库的搜索结果。
         self.open_paged()
-        self.page.locator('#filmSearch').fill('科幻')
-        matched = self.cards().count()
-        self.assertGreater(matched, 12)
-        expect(self.page.locator('#loadMore')).to_be_hidden()
+        expect(self.page.locator('form.home-search')).to_have_attribute('action', 'library.html')
+        expect(self.page.locator('#homeSearch')).to_be_visible()
+        self.page.locator('#homeSearch').fill('相骨')
+        self.page.locator('#homeSearch').press('Enter')
+        self.page.wait_for_url(re.compile(r'library\.html\?q='), wait_until='load')
+        expect(self.page.locator('#libSearch')).to_have_value('相骨')
+        expect(self.page.locator('#libGrid .card')).to_have_count(1)
+        expect(self.page.locator('#libGrid')).to_contain_text('相骨')
 
     def test_unknown_scores_and_paid_screenings_are_honest_empty_states(self):
         self.open()
         scores = self.page.locator('#filmGrid .score')
         self.assertTrue(scores.evaluate_all("els => els.length > 0 && els.every(e => e.textContent.trim() === '待评')"),
                         'every published film without an editor score must show 待评')
-        self.page.locator('#scoreFilter').select_option('8')
+        # 评分筛选随筛选控件一起收进 library.html；首页仍认地址里的同名条件。
+        self.open('?rating=8')
         expect(self.cards()).to_have_count(0)
         expect(self.page.locator('#emptyState')).to_contain_text('评分')
-        self.page.locator('#resetFilters').click()
         if SITE_MODE == 'ranking':
             # 编选形态不提供付费放映：选项、会员区块与购票入口都应消失。
+            self.open()
             self.assertEqual(self.page.locator('#accessFilter option[value="paid"]').count(), 0)
             expect(self.page.locator('#accessFilter')).to_have_value('all')
             expect(self.page.locator('#membership')).to_be_hidden()
             expect(self.page.locator('[data-membership]').first).to_be_hidden()
             return
-        self.page.locator('#accessFilter').select_option('paid')
+        self.open('?access=paid')
         expect(self.cards()).to_have_count(0)
         expect(self.page.locator('#emptyState')).to_contain_text('付费放映')
         self.page.locator('[data-membership]').first.click()
@@ -157,10 +209,12 @@ class FramepickLibrary(unittest.TestCase):
     def test_site_mode_matches_configured_form(self):
         self.open()
         if SITE_MODE == 'ranking':
-            # 编选形态：影院、购票与账号入口整体隐藏，只留编选与片库。
+            # 编选形态：影院、购票与账号入口整体隐藏，只留编选、片库与「我的」（观看记录）。
             expect(self.page.locator('.intro-note')).to_contain_text('AI 短片编选')
-            for selector in ('#membership', '#cinema', '#cinemaPlan', '#prototypeBar', '#accountEntry', '#meEntry'):
+            for selector in ('#membership', '#cinema', '#cinemaPlan', '#prototypeBar', '#accountEntry'):
                 expect(self.page.locator(selector)).to_be_hidden()
+            expect(self.page.locator('#meEntry')).to_be_visible()
+            expect(self.page.locator('#meEntry')).to_have_attribute('href', 'me.html')
             nav = self.page.locator('nav[aria-label="站内导航"]')
             expect(nav.get_by_role('link', name='本周推荐', exact=True)).to_have_attribute('href', '#rankings')
             expect(nav).not_to_contain_text('观影计划')
@@ -186,34 +240,37 @@ class FramepickLibrary(unittest.TestCase):
 
     def test_rating_sort_is_numeric_and_unrated_stays_last(self):
         source = (fp.SITE_ROOT / 'index.html').read_text()
-        for film_id, score in [('xianggu', '8.6'), ('jinhaitang', '10'), ('yanran', '')]:
-            source, n = re.subn(r'(<article\b[^>]*data-film="' + film_id + r'"[^>]*data-score=")[^"]*(")',
+        # 首页只铺最近收录，具体是哪几部由数据决定：取栅格里的头三部打补丁。
+        ids = re.findall(r'<article class="card" data-film="([^"]+)"', source)[:3]
+        self.assertEqual(len(ids), 3, '首页至少要铺三部才谈得上排序')
+        for fid, score in zip(ids, ['8.6', '10', '']):
+            source, n = re.subn(r'(<article\b[^>]*data-film="' + fid + r'"[^>]*data-score=")[^"]*(")',
                                 lambda m: m[1] + score + m[2], source)
-            self.assertEqual(n, 1, film_id)
+            self.assertEqual(n, 1, fid)
         self.page.route(fp.is_index, lambda route: route.fulfill(body=source, content_type='text/html'))
-        self.open()
-        # 无评分的片子会随批次增长，从页面数据算，不写死名单。
+        # 排序控件已随片库收进 library.html，这里走地址参数验证同一套排序逻辑。
+        self.open('?sort=score')
         unrated = set(self.page.locator('#filmGrid [data-film]').evaluate_all(
             "els => els.filter(e => !e.dataset.score).map(e => e.dataset.film)"))
-        self.page.locator('#sortFilter').select_option('score')
         order = self.cards().evaluate_all('cards=>cards.map(c=>c.dataset.film)')
-        self.assertEqual(order[:2], ['jinhaitang', 'xianggu'])
-        self.assertEqual(set(order[2:]), unrated)
-        self.page.locator('#scoreFilter').select_option('9')
+        self.assertEqual(order[:2], [ids[1], ids[0]], '有分的高分在前')
+        self.assertEqual(set(order[2:]), unrated, '无分的排在后面')
+        self.open('?rating=9')
         expect(self.cards()).to_have_count(1)
-        expect(self.cards()).to_contain_text('烬海棠')
+        expect(self.cards()).to_have_attribute('data-film', ids[1])
 
     def test_url_refresh_back_and_detail_focus(self):
-        self.open('?q=燕然&source=douyin')
-        expect(self.cards()).to_have_count(1)
-        self.page.reload()
-        expect(self.page.locator('#filmSearch')).to_have_value('燕然')
-        opener = self.page.locator('button[data-open-film="yanran"]')
+        # 搜索已移到 library.html，这里只验证「弹窗 + 地址 + 前进后退」这一段。
+        self.open()
+        fid = self.grid_id()
+        opener = self.page.locator(f'button[data-open-film="{fid}"]')
+        title = self.page.locator(f'#filmGrid [data-film="{fid}"] h3').text_content()
+        watch = self.page.locator(f'#filmGrid [data-film="{fid}"] .watch').get_attribute('href')
         opener.click()
         expect(self.page.locator('#filmDialog')).to_be_visible()
-        expect(self.page.locator('#detailTitle')).to_have_text('燕然')
-        expect(self.page.locator('#detailWatch')).to_have_attribute('href', 'https://www.douyin.com/video/7675665548755176758')
-        self.assertIn('film=yanran', self.page.url)
+        expect(self.page.locator('#detailTitle')).to_have_text(title)
+        expect(self.page.locator('#detailWatch')).to_have_attribute('href', watch)
+        self.assertIn(f'film={fid}', self.page.url)
         self.page.keyboard.press('Escape')
         expect(self.page.locator('#filmDialog')).not_to_be_visible()
         expect(opener).to_be_focused()
@@ -229,9 +286,11 @@ class FramepickLibrary(unittest.TestCase):
         self.page.keyboard.press('Escape')
         expect(self.page.locator('#filmDialog')).not_to_be_visible()
         self.assertGreaterEqual(self.cards().count(), 3)
-        self.page.locator('#filmSearch').fill('<img src=x onerror=alert(1)>')
-        expect(self.cards()).to_have_count(0)
-        expect(self.page.locator('#emptyState img')).to_have_count(0)
+        # 搜索框在 library.html，注入串必须在那边被当成纯文本。
+        self.page.goto(BASE + fp.url('library.html'), wait_until='load')
+        self.page.locator('#libSearch').fill('<img src=x onerror=alert(1)>')
+        expect(self.page.locator('#libGrid .card')).to_have_count(0)
+        expect(self.page.locator('#libEmpty img')).to_have_count(0)
 
     def test_detail_follows_the_real_source_platform(self):
         # The watch button must name the platform the author published on, never a default.
@@ -254,14 +313,15 @@ class FramepickLibrary(unittest.TestCase):
 
     def test_bookmarks_persist_and_storage_failure_is_nonfatal(self):
         self.open()
-        save = self.page.locator('[data-save-film="jinhaitang"]').first
+        fid = self.grid_id()
+        save = self.page.locator(f'[data-save-film="{fid}"]').first
         save.click()
         expect(save).to_have_attribute('aria-pressed', 'true')
         self.page.reload()
-        expect(self.page.locator('[data-save-film="jinhaitang"]').first).to_have_attribute('aria-pressed', 'true')
+        expect(self.page.locator(f'[data-save-film="{fid}"]').first).to_have_attribute('aria-pressed', 'true')
         self.page.locator('#savedToggle').click()
         expect(self.cards()).to_have_count(1)
-        self.page.locator('[data-save-film="jinhaitang"]').first.click()
+        self.page.locator(f'[data-save-film="{fid}"]').first.click()
         expect(self.cards()).to_have_count(0)
         expect(self.page.locator('#emptyState')).to_contain_text('收藏')
         blocked = self.browser.new_context()
@@ -269,17 +329,44 @@ class FramepickLibrary(unittest.TestCase):
         blocked.add_init_script("Object.defineProperty(window,'localStorage',{get(){throw new DOMException('blocked','SecurityError')}})")
         page = blocked.new_page()
         page.goto(BASE + fp.url())
-        page.locator('[data-save-film="xianggu"]').first.click()
+        blocked_id = page.locator('#filmGrid [data-film]').first.get_attribute('data-film')
+        page.locator(f'[data-save-film="{blocked_id}"]').first.click()
         expect(page.locator('#notice')).to_contain_text('本次浏览')
         page.locator('#savedToggle').click()
         expect(page.locator('#filmGrid [data-film]:visible')).to_have_count(1)
+
+    def test_saved_view_hands_the_whole_library_off_to_the_library_page(self):
+        """首页只有九部，收藏夹却在浏览器里更全：?saved=1 要在片库里覆盖整份作品表。"""
+        self.open()
+        in_grid = self.page.locator('#filmGrid [data-film]').evaluate_all('els => els.map((el) => el.dataset.film)')
+        self.page.goto(BASE + fp.url('library.html'), wait_until='load')
+        outside = self.page.evaluate(
+            "(inGrid) => ((window.FRAMEPICK_FILMS || []).find((film) => !inGrid.includes(film.id)) || {}).id || ''",
+            in_grid)
+        self.assertTrue(outside, '作品表里找不到首页九部之外的作品，无法验证收藏兜底')
+        self.page.evaluate("(id) => localStorage.setItem('framepick:saved:v1', JSON.stringify([id]))", outside)
+        self.page.goto(BASE + fp.url(), wait_until='load')
+        expect(self.page.locator('#savedCount')).to_have_text('1')
+        self.page.locator('#savedToggle').click()
+        expect(self.page.locator('#emptyState')).to_contain_text('这九部里没有你的收藏')
+        link = self.page.locator('#loadMoreLink')
+        expect(link).to_have_attribute('href', 'library.html?saved=1')
+        expect(link).to_contain_text('我的收藏')
+        self.page.goto(BASE + fp.url('library.html?saved=1'), wait_until='load')
+        expect(self.page.locator('#libTitle')).to_have_text('我的收藏')
+        cards = self.page.locator('#libGrid .card')
+        expect(cards).to_have_count(1)
+        expect(cards).to_have_attribute('data-film', outside)
+        self.page.evaluate("localStorage.removeItem('framepick:saved:v1')")
+        self.page.reload()
+        expect(self.page.locator('#libEmpty')).to_contain_text('还没有收藏')
 
     def test_responsive_nojs_and_file_mode(self):
         self.open()
         for width in [320, 390, 820, 1440, 1920]:
             self.page.set_viewport_size({'width': width, 'height': 900})
             self.assertLessEqual(self.page.evaluate('document.documentElement.scrollWidth'), width)
-            self.page.locator('button[data-open-film="xianggu"]').click()
+            self.page.locator('button[data-open-film]').first.click()
             expect(self.page.locator('#filmDialog')).to_be_visible()
             self.assertLessEqual(self.page.locator('#filmDialog').bounding_box()['width'], width)
             self.page.keyboard.press('Escape')
@@ -292,13 +379,13 @@ class FramepickLibrary(unittest.TestCase):
         expect(page.locator('#filmGrid .watch')).to_have_count(total)
         expect(page.locator('#filmSearch')).not_to_be_visible()
         expect(page.get_by_role('link', name='橘小桔的主页')).to_be_visible()
-        self.page.goto((fp.SITE_ROOT / 'index.html').as_uri())
-        self.page.locator('#filmSearch').fill('相骨')
-        expect(self.cards()).to_have_count(1)
+        page.goto((fp.SITE_ROOT / 'index.html').as_uri())
+        page.locator('#homeSearch').fill('相骨')
+        expect(page.locator('#homeSearch')).to_have_value('相骨')
 
     def test_keyboard_bookmark_focus_survives_saving_and_removing(self):
         self.open()
-        save = self.page.locator('button[data-save-film="jinhaitang"]').first
+        save = self.page.locator(f'button[data-save-film="{self.grid_id()}"]').first
         save.focus()
         self.page.keyboard.press('Enter')
         expect(save).to_have_attribute('aria-pressed', 'true')
@@ -313,7 +400,10 @@ class FramepickLibrary(unittest.TestCase):
         self.page.set_viewport_size({'width': 390, 'height': 844})
         self.open()
         expect(self.page.locator('#savedToggle')).to_have_accessible_name(re.compile('我的收藏'))
-        expect(self.page.locator('#sortFilter')).to_have_accessible_name('排序')
+        expect(self.page.locator('#homeSearch')).to_have_accessible_name(re.compile('搜索片名'))
+        # 排序控件在片库页，名称不能丢。
+        self.page.goto(BASE + fp.url('library.html'), wait_until='load')
+        expect(self.page.locator('#libSort')).to_have_accessible_name('排序')
 
     def test_completion_state_is_on_every_card_and_in_the_detail(self):
         self.open()
@@ -323,19 +413,24 @@ class FramepickLibrary(unittest.TestCase):
         self.assertTrue(all(state in ('standalone', 'ongoing', 'completed') for state in states), states)
         tagged = self.page.locator('#filmGrid [data-film] .status-tag').count()
         self.assertEqual(tagged, len([state for state in states if state]))
-        # 至少要有两种状态，否则说明标注没生效。
-        self.assertGreaterEqual(len({state for state in states if state}), 2)
-
-        ongoing = self.page.locator('#filmGrid [data-film][data-completion="ongoing"]').first
-        ongoing.locator('button[data-open-film]').click()
-        expect(self.page.locator('#filmDialog')).to_be_visible()
+        # 首页只铺最近收录，可能清一色「单部」；用分享链接挑一部连载中的验证详情能显示状态。
+        self.open('?film=xianggu')
         expect(self.page.locator('#detailStatus')).to_be_visible()
         expect(self.page.locator('#detailStatus')).to_contain_text('连载中')
         self.page.keyboard.press('Escape')
 
-        single = self.page.locator('#filmGrid [data-film][data-completion="standalone"]').first
-        single.locator('button[data-open-film]').click()
-        expect(self.page.locator('#detailStatus')).to_contain_text('单部')
+        # 栅格里若有连载中的片，点开也要显示状态；没有就走上面的分享链接那条路。
+        self.open()
+        ongoing = self.page.locator('#filmGrid [data-film][data-completion="ongoing"]')
+        if ongoing.count():
+            ongoing.first.locator('button[data-open-film]').click()
+            expect(self.page.locator('#filmDialog')).to_be_visible()
+            expect(self.page.locator('#detailStatus')).to_contain_text('连载中')
+            self.page.keyboard.press('Escape')
+        single = self.page.locator('#filmGrid [data-film][data-completion="standalone"]')
+        if single.count():
+            single.first.locator('button[data-open-film]').click()
+            expect(self.page.locator('#detailStatus')).to_contain_text('单部')
 
     def assert_detail_cover_uncropped(self):
         """详情封面必须完整显示：显示框宽高比 ≈ 图片原始宽高比（裁剪就会不相等）。"""

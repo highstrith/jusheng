@@ -41,15 +41,28 @@ h1 { font-size:clamp(36px,4.3vw,61px);line-height:1.17;letter-spacing:-.045em;fo
 .lede { color:var(--body);font-size:15px;line-height:1.95 }
 .source-note { display:flex;flex-wrap:wrap;gap:9px 16px;margin-top:20px;font-size:11px;color:var(--body) }
 .source-note>span:first-child { color:var(--muted) }
-.feature { display:grid;grid-template-columns:1.8fr 1fr;background:var(--surface);border-radius:9px;overflow:hidden }
+/* 首屏主推是轮播：.feature 只当裁剪容器，.hero-track 横排幻灯片，靠 translate 换页。 */
+.feature { position:relative;background:var(--surface);border-radius:9px;overflow:hidden }
+.hero-track { display:flex;transition:transform .7s cubic-bezier(.22,.61,.36,1);touch-action:pan-y }
+.hero-slide { flex:0 0 100%;display:grid;grid-template-columns:minmax(0,1.8fr) minmax(0,1fr);min-width:0 }
+.hero-controls { position:absolute;left:22px;bottom:14px;display:flex;align-items:center;gap:9px;z-index:2 }
+.hero-arrow { display:grid;place-items:center;width:28px;height:28px;padding:0;background:rgba(16,17,20,.72);border:1px solid #ffffff2b;border-radius:50%;color:var(--text) }
+.hero-arrow:hover { background:rgba(16,17,20,.94);border-color:#ffffff5c }
+.hero-arrow svg { width:15px;height:15px }
+.hero-dots { display:flex;align-items:center;gap:2px }
+.hero-dot { position:relative;width:14px;height:20px;padding:0;background:none;border:0 }
+.hero-dot::after { content:"";position:absolute;left:2px;right:2px;bottom:8px;height:3px;border-radius:2px;background:#ffffff3d;transition:background .3s }
+.hero-dot[aria-current="true"]::after { background:var(--text) }
+.hero-dot:hover::after { background:#ffffff8a }
 .feature-media { position:relative;display:block;min-height:320px }
 .feature-media img { width:100%;height:100%;object-fit:cover;position:absolute;inset:0 }
 .feature-media::after { content:"";position:absolute;inset:0;background:linear-gradient(0deg,rgba(0,0,0,.48),transparent 40%) }
 .feature-label { position:absolute;top:20px;left:22px;font-size:11px;padding:4px 10px;background:rgba(16,17,20,.76);border:1px solid #ffffff24;border-radius:3px;z-index:1 }
-.image-note { position:absolute;bottom:15px;left:22px;font-size:10px;color:#d0d0cd;z-index:1 }
+.image-note { position:absolute;bottom:15px;right:22px;font-size:10px;color:#d0d0cd;z-index:1 }
 .feature-copy { padding:32px 36px;display:flex;flex-direction:column;align-items:flex-start;justify-content:center }
 .film-tags { display:flex;gap:12px;font-size:11px;color:var(--gold) }
-.feature h2 { font:400 clamp(34px,3.3vw,47px)/1.2 var(--serif);margin:14px 0 18px }
+/* 长英文片名（如 The Mercy Protocol）在小屏上不许顶出卡片：实在放不下就地折行。 */
+.feature h2 { font:400 clamp(34px,3.3vw,47px)/1.2 var(--serif);margin:14px 0 18px;overflow-wrap:break-word }
 .feature-copy>p { font-size:14px;line-height:1.9;color:var(--body) }
 .feature-meta { display:grid;gap:3px;margin:18px 0 22px;font-size:11px;color:var(--muted) }
 .watch { display:inline-flex;align-items:center;gap:10px;font-size:12px }
@@ -80,6 +93,10 @@ select option { background:var(--surface) }
 .category-tabs span { font-size:10px;margin-left:5px;color:var(--muted) }
 .filter-row { display:flex;flex-wrap:wrap;gap:10px 22px;align-items:center;padding:14px 0 20px }
 .filter-row label { display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted) }
+/* 「每页 → 自定义…」露出的数字框：跟旁边的下拉同一个气质，只有一条底边。 */
+.filter-row input[type="number"] { width:54px;padding:8px 6px;background:transparent;border:0;border-bottom:1px solid var(--line);border-radius:0;color:var(--text);font:12px/1.6 var(--sans);text-align:center;appearance:textfield }
+.filter-row input[type="number"]::-webkit-outer-spin-button,.filter-row input[type="number"]::-webkit-inner-spin-button { appearance:none;margin:0 }
+.filter-row input[type="number"]:focus-visible { border-bottom-color:var(--gold) }
 .filter-note { font-size:10px;color:var(--muted);margin-left:auto }
 .grid { display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:28px }
 .card { min-width:0 }
@@ -158,7 +175,7 @@ dialog::backdrop { background:rgba(0,0,0,.8) }
 .notice.is-visible { opacity:1 }
 @media (max-width:1000px) {
   .wrap { width:calc(100% - 48px) }.bar-in { gap:24px }.bar nav { gap:20px }.mark-en { display:none }
-  .feature { grid-template-columns:1.5fr 1fr }.feature-copy { padding:27px }.feature-media { min-height:340px }
+  .hero-slide { grid-template-columns:minmax(0,1.5fr) minmax(0,1fr) }.feature-copy { padding:27px }.feature-media { min-height:340px }
   .grid { gap:22px }.filter-note { width:100%;margin-left:0 }.standard,.about { gap:42px }
 }
 @media (max-width:760px) {
@@ -168,12 +185,14 @@ dialog::backdrop { background:rgba(0,0,0,.8) }
   .saved-toggle>span:nth-child(2),.sort-control>span { position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap }
   .intro { grid-template-columns:1fr;padding:34px 0 27px;gap:20px }.intro-aside { justify-self:start;padding:0 }.intro-note { font-size:11px;margin-bottom:12px } h1 { font-size:clamp(35px,6.5vw,49px) }
   .lede { font-size:13px }.desktop-break { display:none }.source-note { margin-top:13px;font-size:10px;gap:13px }
-  .feature { grid-template-columns:1fr }.feature-media { min-height:0;aspect-ratio:16/9 }.feature-copy { padding:23px 25px;display:grid;grid-template-columns:1fr auto;gap:0 16px;align-items:start }
-  .film-tags { grid-column:1/-1;font-size:10px }.feature h2 { font-size:36px;margin:8px 0 10px }.feature-copy>p { font-size:12px;grid-column:1/-1 }.feature-copy>p br { display:none }
+  .hero-slide { grid-template-columns:minmax(0,1fr) }.feature-media { min-height:0;aspect-ratio:16/9 }.feature-copy { padding:23px 25px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:0 16px;align-items:start }
+  /* 手机上卡片底部被「免费原片」说明占着，控件改成卡片内单独一行，谁都不压谁。 */
+  .hero-controls { position:static;justify-content:flex-end;padding:0 22px 13px;gap:7px }.hero-arrow { width:32px;height:32px }.hero-arrow svg { width:15px;height:15px }.hero-dot { height:26px }.hero-dot::after { bottom:11px }.image-note { right:16px;bottom:12px }
+  .film-tags { grid-column:1/-1;font-size:10px }.feature h2 { grid-column:1/-1;font-size:36px;margin:8px 0 10px }.feature-copy>p { font-size:12px;grid-column:1/-1 }.feature-copy>p br { display:none }
   .feature-meta { margin:14px 0 0;grid-column:1;font-size:10px }.feature .watch { grid-column:2;grid-row:4;align-self:center;padding:9px 12px;font-size:11px }.watch-note { grid-column:1/-1;font-size:9px;margin-top:13px }
   .library { padding-top:42px }.section-heading { margin-bottom:22px }.section-heading h2 { font-size:25px }.section-caption { font-size:11px }#resultCount { font-size:10px }
   .search-row { gap:10px;margin-bottom:21px }.search-box { padding:0 12px;min-height:46px }.search-box input { font-size:12px }.search-hint { display:none }.sort-control select { max-width:105px;padding-right:15px;font-size:11px }
-  .category-tabs { gap:22px }.category-tabs button { font-size:12px }.filter-row { gap:6px 12px;padding:13px 0 22px }.filter-row label { font-size:10px }.filter-row select { font-size:11px;padding:7px 15px 7px 2px }.filter-note { font-size:9px }
+  .category-tabs { gap:22px }.category-tabs button { font-size:12px }.filter-row { gap:6px 12px;padding:13px 0 22px }.filter-row label { font-size:10px }.filter-row select { font-size:11px;padding:7px 15px 7px 2px }.filter-row input[type="number"] { width:46px;padding:6px 4px;font-size:11px }.filter-note { font-size:9px }
   .grid { grid-template-columns:repeat(2,minmax(0,1fr));gap:30px 18px }.card h3 { font-size:25px }.film-author { font-size:10px;gap:7px;flex-wrap:wrap }.source-name { display:none }.card-actions { gap:12px }.details-button { font-size:11px }.card-actions .watch { font-size:10px }.save-button { min-width:32px;min-height:34px }
   .membership { margin-top:58px;padding-top:29px }.membership-grid { gap:16px }.plan { padding:24px }.plan h3 { font-size:20px }.plan-top { flex-wrap:wrap;gap:5px }.plan ul { line-height:1.8 }.membership-status { font-size:10px }
   .standard { margin-top:60px;padding-top:32px;gap:30px;grid-template-columns:1fr }.standard h2 { font-size:28px }.about { grid-template-columns:1fr;gap:28px;margin-top:50px }.foot { margin-top:40px }
@@ -315,7 +334,6 @@ html[data-sfm="ranking"] #membership,
 html[data-sfm="ranking"] #cinema,
 html[data-sfm="ranking"] #cinemaPlan,
 html[data-sfm="ranking"] #prototypeBar,
-html[data-sfm="ranking"] #meEntry,
 html[data-sfm="ranking"] #emptyMembership { display:none !important }
 html[data-sfm="ranking"]:not([data-accounts="enabled"]) #accountEntry { display:none !important }
 .load-more { display:flex;flex-direction:column;align-items:center;gap:12px;padding:22px 0 8px }
@@ -327,13 +345,42 @@ html[data-sfm="ranking"]:not([data-accounts="enabled"]) #accountEntry { display:
 .lib-head h1 { font:400 38px/1.35 var(--serif);margin:10px 0 12px }
 .lib-head .lede { color:var(--body);font-size:13px;line-height:1.9;max-width:58ch }
 .lib-empty { padding:46px 0;color:var(--body);font-size:13px;text-align:center }
-.pager { display:flex;flex-wrap:wrap;gap:8px;justify-content:center;padding:36px 0 8px }
-.pager-top { padding:0 0 24px;justify-content:flex-start }
+/* 翻页条和网格、页数同一列左边对齐；上下两条长得一样，翻页时高宽都不变。 */
+.pager { display:flex;flex-wrap:nowrap;gap:8px;justify-content:flex-start;padding:36px 0 8px }
+.pager-top { padding:0 0 24px }
 .pager[hidden] { display:none }
-.pager button { min-width:38px;height:38px;padding:0 12px;border:1px solid var(--line);background:transparent;color:var(--body);font-size:13px;border-radius:6px }
+.pager button { min-width:38px;height:38px;padding:0 12px;border:1px solid var(--line);background:transparent;color:var(--body);font-size:13px;border-radius:6px;font-variant-numeric:tabular-nums }
 .pager button:hover:not(:disabled) { color:var(--text);border-color:var(--muted) }
 .pager button[aria-current="page"] { background:var(--text);color:var(--bg);border-color:var(--text) }
 .pager button:disabled { opacity:.35 }
 .pager-gap { display:flex;align-items:center;color:var(--muted);font-size:13px;padding:0 2px }
-@media(max-width:760px) { .lib-head { padding:34px 0 20px }.lib-head h1 { font-size:30px }.pager { gap:6px }.pager button { min-width:34px;height:34px;padding:0 10px } }
+.pager-step { display:inline-flex;align-items:center;justify-content:center;gap:6px }
+.pager-step svg { display:none;width:14px;height:14px }
+.pager-status { display:none;align-items:center;color:var(--muted);font-size:12px;font-variant-numeric:tabular-nums }
+@media(max-width:760px) { .lib-head { padding:34px 0 20px }.lib-head h1 { font-size:30px } .pager { gap:4px }.pager button { min-width:30px;height:32px;padding:0 6px;font-size:12px }.pager-step { padding:0 }.pager-step svg { display:block }.pager-step span { display:none } }
+/* 窄到 320 这类宽度时七个页码放不下：只留「第 x / y 页」，宽度不再随页码位数变化。 */
+@media(max-width:360px) { .pager button[data-page]:not(.pager-step),.pager-gap { display:none }.pager-status { display:inline-flex } }
 .lib-meta { font-size:13px;color:var(--muted);margin:2px 0 14px }
+
+/* 移动端字号下限：卡片元信息原来最低到 10px，中文在手机上糊成一团。
+   桌面排版不动，只在窄屏把最小字号抬到 11–12px。 */
+@media (max-width:760px) {
+  .kind,.card-runtime,.film-author,.score,.card-actions .watch,.section-caption { font-size:12px }
+  .status-tag,.access-badge,.image-note,.community-score,.catalogue-foot p,.load-more p { font-size:11px }
+  .card-topline { gap:8px;row-gap:4px }
+}
+
+/* 顶栏在手机上要塞下「品牌 + 导航 + 我的 + 收藏」四组。原样排会折成两行，
+   收藏图标单独掉到第二行；这里只收紧间距，不删入口。 */
+@media (max-width:760px) {
+  .bar-in { gap:10px }
+  .bar nav { gap:14px }
+  .me-entry { padding:6px 0; border-left:0; font-size:11px }
+}
+@media (max-width:430px) {
+  .mark-cn { font-size:19px }
+  .bar nav { gap:11px }
+  .mark > svg { width:21px;height:21px }
+  /* 320px 上第二行会剩「我的 + 收藏」，靠右收齐，别吊在左边。 */
+  .me-entry { margin-left:auto }
+}

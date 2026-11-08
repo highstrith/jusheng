@@ -50,6 +50,13 @@
           "cover": "img/tower32-640w.webp"
         }
       ],
+      "supplement": [
+        {
+          "id": "die1-luodi-wusheng",
+          "title": "蝶1：落地无声",
+          "releaseDate": "2026-10-07"
+        }
+      ],
       "candidateCount": 5
     }
   ]

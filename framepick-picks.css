@@ -20,6 +20,11 @@
 /* 周榜：期次说明、每部首发日期、无新作时的诚实空状态。 */
 .picks-caption { margin:-12px 0 22px;color:var(--muted);font-size:12px;line-height:1.8 }
 .pick-release { margin-top:9px;color:var(--gold);font-size:10px;letter-spacing:.02em;font-variant-numeric:tabular-nums }
+/* 补选：不是为了凑数好看，是为了让标题下铺满五张。日期照实写，另挂一枚小标签。 */
+.pick-bonus { display:inline-block;margin-left:7px;padding:0 5px;border:1px solid var(--line);border-radius:999px;color:var(--muted);font-size:10px;line-height:15px;letter-spacing:.04em;vertical-align:1px }
+.pick-card.is-bonus .pick-rank { color:var(--muted);font-weight:400 }
+/* 占位符「＋」不是数字，后面再跟一个「·」就成了「＋ · 动作」，像排版事故。 */
+.pick-card.is-bonus .pick-genre::before { content:none }
 .picks-empty { margin:0;padding:28px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);color:var(--body);font-size:14px;line-height:2 }
 .picks-empty a { color:var(--gold);text-underline-offset:3px }
 @media(max-width:1000px) {
@@ -48,4 +53,9 @@
      折行后开头的「·」会变成孤零零一个点，这里直接去掉，靠间距分隔。 */
   .pick-meta { gap:3px 8px }
   .pick-genre::before,.pick-runtime::before { display:none }
+}
+
+/* 窄屏一列只有一百多像素，10px 的元信息读不出来；抬到 11px 仍放得下。 */
+@media (max-width:760px) {
+  .pick-meta,.pick-card p,.pick-rank,.pick-bonus { font-size:11px }
 }

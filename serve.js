@@ -16,6 +16,13 @@ const indexPath = path.join(siteRoot, "index.html");
 const reviewModule = path.join(root, "server", "framepick-reviews.cjs");
 
 function readFilmIds() {
+  // 首页只铺九部，评论／离站的合法作品要按全量作品表算；没有数据文件才退回解析页面卡片。
+  const dataPath = path.join(siteRoot, "films-data.js");
+  if (fs.existsSync(dataPath)) {
+    const ids = [...fs.readFileSync(dataPath, "utf8").matchAll(/"id":\s*"([^"]+)"/g)]
+      .map((match) => match[1]);
+    if (ids.length) return ids;
+  }
   if (!fs.existsSync(indexPath)) return [];
   return [...fs.readFileSync(indexPath, "utf8")
     .matchAll(/<article\b[^>]*data-film="([^"]+)"/g)].map((match) => match[1]);

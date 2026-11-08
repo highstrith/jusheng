@@ -2,6 +2,7 @@
 import functools
 import http.server
 import json
+import re
 import subprocess
 import threading
 import unittest
@@ -116,8 +117,23 @@ class OssCovers(unittest.TestCase):
 
     def test_detail_uses_oss_for_thumbnail_and_large_cover(self):
         self.page.goto(self.base, wait_until='load')
-        self.page.locator('[data-open-film="pinzi"]').first.click()
-        expect(self.page.locator('#detailImage')).to_have_attribute('src', OSS + 'pinzi-1280w.webp')
+        # 首页只铺「最近收录」九部，具体是哪几部由数据决定：从页面上取第一部，
+        # 断言 OSS 改写对任意一部详情都成立，而不是钉死某个片名。
+        card = self.page.locator('#filmGrid [data-film]').first
+        film_id = card.get_attribute('data-film')
+        expect(card.locator('img')).to_have_attribute('src', OSS + f'{film_id}-640w.webp')
+        card.locator('button[data-open-film]').first.click()
+        expect(self.page.locator('#detailImage')).to_have_attribute(
+            'src', re.compile(rf'^{re.escape(OSS)}{re.escape(film_id)}-(1280|640)w\.webp$'))
+        self.assertTrue(all(url.startswith(OSS) for url in self.requests), self.requests)
+
+    def test_detail_prefers_the_large_cover_when_one_exists(self):
+        # 只有少数作品出过 1280w 大图，其余用 640w 兜底；两条路径都要走 OSS。
+        large = sorted(Path(p).name[:-len('-1280w.webp')] for p in (ROOT / 'img').glob('*-1280w.webp'))
+        self.assertTrue(large, 'img/ 里没有 1280w 封面，无法验证大图优先')
+        film_id = large[0]
+        self.page.goto(self.base + '?film=' + film_id, wait_until='load')
+        expect(self.page.locator('#detailImage')).to_have_attribute('src', OSS + f'{film_id}-1280w.webp')
         self.assertTrue(all(url.startswith(OSS) for url in self.requests), self.requests)
 
     def test_ranking_site_exposes_login_when_an_account_service_is_configured(self):

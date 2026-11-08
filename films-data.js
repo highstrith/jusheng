@@ -28,6 +28,9 @@ window.FRAMEPICK_FILMS = [
     "scoreText": "待评",
     "completion": "ongoing",
     "statusLabel": "连载中",
+    "episode": "第 01 集",
+    "volume": "",
+    "relation": "",
     "intakeDate": "2026-10-31",
     "published": "2026-08-18"
   },
@@ -58,6 +61,9 @@ window.FRAMEPICK_FILMS = [
     "scoreText": "待评",
     "completion": "ongoing",
     "statusLabel": "连载中",
+    "episode": "序章「勇敢号」",
+    "volume": "",
+    "relation": "",
     "intakeDate": "2026-10-31",
     "published": "2026-08-04"
   },
@@ -89,6 +95,9 @@ window.FRAMEPICK_FILMS = [
     "scoreText": "待评",
     "completion": "ongoing",
     "statusLabel": "连载中",
+    "episode": "第 01 集",
+    "volume": "",
+    "relation": "",
     "intakeDate": "2026-10-31",
     "published": "2026-08"
   },
@@ -119,6 +128,9 @@ window.FRAMEPICK_FILMS = [
     "scoreText": "待评",
     "completion": "standalone",
     "statusLabel": "单部",
+    "episode": "",
+    "volume": "",
+    "relation": "",
     "intakeDate": "2026-11-03",
     "published": "2026-02-03"
   },
@@ -149,6 +161,9 @@ window.FRAMEPICK_FILMS = [
     "scoreText": "待评",
     "completion": "standalone",
     "statusLabel": "单部",
+    "episode": "",
+    "volume": "",
+    "relation": "",
     "intakeDate": "2026-11-03",
     "published": "2026-03-20"
   },
@@ -179,6 +194,9 @@ window.FRAMEPICK_FILMS = [
     "scoreText": "待评",
     "completion": "ongoing",
     "statusLabel": "连载中",
+    "episode": "第 01 集《狐仙接亲》",
+    "volume": "",
+    "relation": "",
     "intakeDate": "2026-11-03",
     "published": "2026-09-10"
   },
@@ -209,6 +227,9 @@ window.FRAMEPICK_FILMS = [
     "scoreText": "待评",
     "completion": "standalone",
     "statusLabel": "单部",
+    "episode": "",
+    "volume": "",
+    "relation": "",
     "intakeDate": "2026-11-03",
     "published": "2026-11-02"
   },
@@ -239,6 +260,9 @@ window.FRAMEPICK_FILMS = [
     "scoreText": "待评",
     "completion": "standalone",
     "statusLabel": "单部",
+    "episode": "",
+    "volume": "",
+    "relation": "",
     "intakeDate": "2026-11-03",
     "published": "2026-11-02"
   },
@@ -269,6 +293,9 @@ window.FRAMEPICK_FILMS = [
     "scoreText": "待评",
     "completion": "standalone",
     "statusLabel": "单部",
+    "episode": "",
+    "volume": "",
+    "relation": "",
     "intakeDate": "2026-11-03",
     "published": "2026-10-28"
   },
@@ -299,6 +326,9 @@ window.FRAMEPICK_FILMS = [
     "scoreText": "待评",
     "completion": "standalone",
     "statusLabel": "单部",
+    "episode": "",
+    "volume": "",
+    "relation": "",
     "intakeDate": "2026-11-03",
     "published": "2026-11-01"
   },
@@ -329,6 +359,9 @@ window.FRAMEPICK_FILMS = [
     "scoreText": "待评",
     "completion": "standalone",
     "statusLabel": "单部",
+    "episode": "",
+    "volume": "",
+    "relation": "",
     "intakeDate": "2026-11-03",
     "published": "2026-08"
   },
@@ -359,6 +392,9 @@ window.FRAMEPICK_FILMS = [
     "scoreText": "待评",
     "completion": "standalone",
     "statusLabel": "单部",
+    "episode": "",
+    "volume": "",
+    "relation": "",
     "intakeDate": "2026-11-03",
     "published": "2026-04"
   },
@@ -389,6 +425,9 @@ window.FRAMEPICK_FILMS = [
     "scoreText": "待评",
     "completion": "ongoing",
     "statusLabel": "连载中",
+    "episode": "第 1 集",
+    "volume": "",
+    "relation": "",
     "intakeDate": "2026-11-03",
     "published": "2026-08"
   },
@@ -419,6 +458,9 @@ window.FRAMEPICK_FILMS = [
     "scoreText": "待评",
     "completion": "ongoing",
     "statusLabel": "连载中",
+    "episode": "第 1 集：钟山谶",
+    "volume": "",
+    "relation": "",
     "intakeDate": "2026-11-03",
     "published": "2026-11-01"
   },
@@ -449,6 +491,9 @@ window.FRAMEPICK_FILMS = [
     "scoreText": "待评",
     "completion": "standalone",
     "statusLabel": "单部",
+    "episode": "",
+    "volume": "",
+    "relation": "",
     "intakeDate": "2026-11-03",
     "published": "2026-08"
   },
@@ -479,6 +524,9 @@ window.FRAMEPICK_FILMS = [
     "scoreText": "待评",
     "completion": "standalone",
     "statusLabel": "单部",
+    "episode": "",
+    "volume": "",
+    "relation": "",
     "intakeDate": "2026-11-03",
     "published": "2026-09"
   },
@@ -509,6 +557,9 @@ window.FRAMEPICK_FILMS = [
     "scoreText": "待评",
     "completion": "standalone",
     "statusLabel": "单部",
+    "episode": "",
+    "volume": "",
+    "relation": "",
     "intakeDate": "2026-11-03",
     "published": "2026-08"
   },
@@ -539,6 +590,9 @@ window.FRAMEPICK_FILMS = [
     "scoreText": "待评",
     "completion": "standalone",
     "statusLabel": "单部",
+    "episode": "",
+    "volume": "",
+    "relation": "",
     "intakeDate": "2026-11-03",
     "published": "2026-04"
   },
@@ -570,6 +624,9 @@ window.FRAMEPICK_FILMS = [
     "scoreText": "待评",
     "completion": "ongoing",
     "statusLabel": "连载中",
+    "episode": "红之章",
+    "volume": "",
+    "relation": "",
     "intakeDate": "2026-11-03",
     "published": "2026-10-21"
   },
@@ -601,6 +658,9 @@ window.FRAMEPICK_FILMS = [
     "scoreText": "待评",
     "completion": "ongoing",
     "statusLabel": "连载中",
+    "episode": "第 1 集",
+    "volume": "",
+    "relation": "",
     "intakeDate": "2026-11-03",
     "published": "2026-11-03"
   },
@@ -631,6 +691,9 @@ window.FRAMEPICK_FILMS = [
     "scoreText": "待评",
     "completion": "standalone",
     "statusLabel": "单部",
+    "episode": "",
+    "volume": "",
+    "relation": "",
     "intakeDate": "2026-11-03",
     "published": "2026-09-10"
   },
@@ -661,6 +724,9 @@ window.FRAMEPICK_FILMS = [
     "scoreText": "待评",
     "completion": "ongoing",
     "statusLabel": "连载中",
+    "episode": "第 1 集 · 连载中",
+    "volume": "",
+    "relation": "",
     "intakeDate": "2026-11-03",
     "published": "2026-07-10"
   },
@@ -692,6 +758,9 @@ window.FRAMEPICK_FILMS = [
     "scoreText": "待评",
     "completion": "standalone",
     "statusLabel": "单部",
+    "episode": "",
+    "volume": "",
+    "relation": "",
     "intakeDate": "2026-11-03",
     "published": "2026-04-12"
   },
@@ -723,6 +792,9 @@ window.FRAMEPICK_FILMS = [
     "scoreText": "待评",
     "completion": "standalone",
     "statusLabel": "单部",
+    "episode": "",
+    "volume": "",
+    "relation": "",
     "intakeDate": "2026-11-03",
     "published": "2026-11-02"
   },
@@ -753,6 +825,9 @@ window.FRAMEPICK_FILMS = [
     "scoreText": "待评",
     "completion": "standalone",
     "statusLabel": "单部",
+    "episode": "",
+    "volume": "",
+    "relation": "",
     "intakeDate": "2026-11-03",
     "published": "2026-11-01"
   },
@@ -783,6 +858,9 @@ window.FRAMEPICK_FILMS = [
     "scoreText": "待评",
     "completion": "ongoing",
     "statusLabel": "连载中",
+    "episode": "第 1 集 · 连载中",
+    "volume": "",
+    "relation": "",
     "intakeDate": "2026-11-03",
     "published": "2026-10-11"
   },
@@ -814,6 +892,9 @@ window.FRAMEPICK_FILMS = [
     "scoreText": "待评",
     "completion": "standalone",
     "statusLabel": "单部",
+    "episode": "",
+    "volume": "",
+    "relation": "",
     "intakeDate": "2026-11-03",
     "published": "2026-10-20"
   },
@@ -845,6 +926,9 @@ window.FRAMEPICK_FILMS = [
     "scoreText": "待评",
     "completion": "standalone",
     "statusLabel": "单部",
+    "episode": "",
+    "volume": "",
+    "relation": "",
     "intakeDate": "2026-11-03",
     "published": "2026-09-26"
   },
@@ -876,6 +960,9 @@ window.FRAMEPICK_FILMS = [
     "scoreText": "待评",
     "completion": "standalone",
     "statusLabel": "单部",
+    "episode": "",
+    "volume": "",
+    "relation": "",
     "intakeDate": "2026-11-03",
     "published": "2026-09-20"
   },
@@ -907,6 +994,9 @@ window.FRAMEPICK_FILMS = [
     "scoreText": "待评",
     "completion": "standalone",
     "statusLabel": "单部",
+    "episode": "",
+    "volume": "",
+    "relation": "",
     "intakeDate": "2026-11-03",
     "published": "2026-09-08"
   },
@@ -937,6 +1027,9 @@ window.FRAMEPICK_FILMS = [
     "scoreText": "待评",
     "completion": "standalone",
     "statusLabel": "单部",
+    "episode": "",
+    "volume": "",
+    "relation": "",
     "intakeDate": "2026-11-03",
     "published": "2026-11-02"
   },
@@ -967,6 +1060,9 @@ window.FRAMEPICK_FILMS = [
     "scoreText": "待评",
     "completion": "standalone",
     "statusLabel": "单部",
+    "episode": "",
+    "volume": "",
+    "relation": "",
     "intakeDate": "2026-11-04",
     "published": "2026-08-20"
   },
@@ -998,6 +1094,9 @@ window.FRAMEPICK_FILMS = [
     "scoreText": "待评",
     "completion": "standalone",
     "statusLabel": "单部",
+    "episode": "",
+    "volume": "",
+    "relation": "",
     "intakeDate": "2026-11-05",
     "published": "2026-10-11"
   },
@@ -1028,6 +1127,9 @@ window.FRAMEPICK_FILMS = [
     "scoreText": "待评",
     "completion": "standalone",
     "statusLabel": "单部",
+    "episode": "",
+    "volume": "",
+    "relation": "",
     "intakeDate": "2026-11-05",
     "published": "2025-08-28"
   },
@@ -1058,6 +1160,9 @@ window.FRAMEPICK_FILMS = [
     "scoreText": "待评",
     "completion": "standalone",
     "statusLabel": "单部",
+    "episode": "",
+    "volume": "",
+    "relation": "",
     "intakeDate": "2026-11-05",
     "published": "2025-07-31"
   },
@@ -1088,6 +1193,9 @@ window.FRAMEPICK_FILMS = [
     "scoreText": "待评",
     "completion": "standalone",
     "statusLabel": "单部",
+    "episode": "",
+    "volume": "",
+    "relation": "",
     "intakeDate": "2026-11-05",
     "published": "2026-10-24"
   },
@@ -1118,6 +1226,9 @@ window.FRAMEPICK_FILMS = [
     "scoreText": "待评",
     "completion": "standalone",
     "statusLabel": "单部",
+    "episode": "",
+    "volume": "",
+    "relation": "",
     "intakeDate": "2026-11-05",
     "published": "2026-09-21"
   },
@@ -1149,6 +1260,9 @@ window.FRAMEPICK_FILMS = [
     "scoreText": "待评",
     "completion": "standalone",
     "statusLabel": "单部",
+    "episode": "",
+    "volume": "",
+    "relation": "",
     "intakeDate": "2026-11-05",
     "published": "2026-08-08"
   },
@@ -1179,6 +1293,9 @@ window.FRAMEPICK_FILMS = [
     "scoreText": "待评",
     "completion": "standalone",
     "statusLabel": "单部",
+    "episode": "",
+    "volume": "",
+    "relation": "",
     "intakeDate": "2026-11-05",
     "published": "2026-10-29"
   },
@@ -1210,6 +1327,9 @@ window.FRAMEPICK_FILMS = [
     "scoreText": "待评",
     "completion": "ongoing",
     "statusLabel": "连载中",
+    "episode": "本篇 · 作者注明待续",
+    "volume": "",
+    "relation": "",
     "intakeDate": "2026-11-05",
     "published": "2026-02-17"
   },
@@ -1240,6 +1360,9 @@ window.FRAMEPICK_FILMS = [
     "scoreText": "待评",
     "completion": "ongoing",
     "statusLabel": "连载中",
+    "episode": "Episode 1 · 第一集",
+    "volume": "",
+    "relation": "",
     "intakeDate": "2026-11-05",
     "published": "2025-06-04"
   },
@@ -1271,6 +1394,9 @@ window.FRAMEPICK_FILMS = [
     "scoreText": "待评",
     "completion": "standalone",
     "statusLabel": "单部",
+    "episode": "",
+    "volume": "",
+    "relation": "",
     "intakeDate": "2026-11-06",
     "published": "2026-11-04"
   },
@@ -1301,6 +1427,9 @@ window.FRAMEPICK_FILMS = [
     "scoreText": "待评",
     "completion": "standalone",
     "statusLabel": "单部",
+    "episode": "",
+    "volume": "",
+    "relation": "",
     "intakeDate": "2026-11-06",
     "published": "2026-11-03"
   },
@@ -1331,6 +1460,9 @@ window.FRAMEPICK_FILMS = [
     "scoreText": "待评",
     "completion": "standalone",
     "statusLabel": "单部",
+    "episode": "",
+    "volume": "",
+    "relation": "",
     "intakeDate": "2026-11-06",
     "published": "2026-11-06"
   },
@@ -1362,6 +1494,9 @@ window.FRAMEPICK_FILMS = [
     "scoreText": "待评",
     "completion": "standalone",
     "statusLabel": "单部",
+    "episode": "",
+    "volume": "",
+    "relation": "",
     "intakeDate": "2026-11-06",
     "published": "2026-09-02"
   },
@@ -1393,6 +1528,9 @@ window.FRAMEPICK_FILMS = [
     "scoreText": "待评",
     "completion": "standalone",
     "statusLabel": "单部",
+    "episode": "",
+    "volume": "",
+    "relation": "",
     "intakeDate": "2026-11-07",
     "published": "2026-11-06"
   },
@@ -1423,6 +1561,9 @@ window.FRAMEPICK_FILMS = [
     "scoreText": "待评",
     "completion": "standalone",
     "statusLabel": "单部",
+    "episode": "",
+    "volume": "",
+    "relation": "",
     "intakeDate": "2026-11-07",
     "published": "2026-11-05"
   },
@@ -1454,6 +1595,9 @@ window.FRAMEPICK_FILMS = [
     "scoreText": "待评",
     "completion": "standalone",
     "statusLabel": "单部",
+    "episode": "",
+    "volume": "",
+    "relation": "",
     "intakeDate": "2026-11-07",
     "published": "2026-11-06"
   },
@@ -1485,6 +1629,9 @@ window.FRAMEPICK_FILMS = [
     "scoreText": "待评",
     "completion": "standalone",
     "statusLabel": "单部",
+    "episode": "",
+    "volume": "",
+    "relation": "",
     "intakeDate": "2026-11-07",
     "published": "2026-11-07"
   },
@@ -1516,6 +1663,9 @@ window.FRAMEPICK_FILMS = [
     "scoreText": "待评",
     "completion": "standalone",
     "statusLabel": "单部",
+    "episode": "",
+    "volume": "",
+    "relation": "",
     "intakeDate": "2026-11-07",
     "published": "2026-11-03"
   },
@@ -1547,6 +1697,9 @@ window.FRAMEPICK_FILMS = [
     "scoreText": "待评",
     "completion": "standalone",
     "statusLabel": "单部",
+    "episode": "",
+    "volume": "",
+    "relation": "",
     "intakeDate": "2026-11-08",
     "published": "2026-11-05"
   },
@@ -1578,6 +1731,9 @@ window.FRAMEPICK_FILMS = [
     "scoreText": "待评",
     "completion": "standalone",
     "statusLabel": "单部",
+    "episode": "",
+    "volume": "",
+    "relation": "《梅花之影》（蝶2）的前作",
     "intakeDate": "2026-11-08",
     "published": "2026-10-07"
   },
@@ -1609,6 +1765,9 @@ window.FRAMEPICK_FILMS = [
     "scoreText": "待评",
     "completion": "standalone",
     "statusLabel": "单部",
+    "episode": "",
+    "volume": "",
+    "relation": "",
     "intakeDate": "2026-11-08",
     "published": "2026-11-08"
   },
@@ -1640,6 +1799,9 @@ window.FRAMEPICK_FILMS = [
     "scoreText": "待评",
     "completion": "standalone",
     "statusLabel": "单部",
+    "episode": "",
+    "volume": "",
+    "relation": "",
     "intakeDate": "2026-11-08",
     "published": "2026-11-05"
   },
@@ -1670,6 +1832,9 @@ window.FRAMEPICK_FILMS = [
     "scoreText": "待评",
     "completion": "standalone",
     "statusLabel": "单部",
+    "episode": "",
+    "volume": "",
+    "relation": "",
     "intakeDate": "2026-11-08",
     "published": "2026-11-04"
   }

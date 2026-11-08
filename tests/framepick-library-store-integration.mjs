@@ -30,6 +30,23 @@ function publish(s, id) {
   for (const status of ['reviewing', 'approved', 'scheduled', 'published']) s.setStatus(id, status);
 }
 
+// 只拷构建器真正要动的文件（index.html 读写、films-data.js 写出）。整仓
+// cpSync 会把 img/ 与 docs/ 一起搬（几百个文件），撞上沙箱的批量复制策略
+// （CODEBUDDY_BROKER_DENY），小批量逐文件复制不受限。
+// data/ 也要拷：首页九部让开本周推荐、首屏主推跟着周榜走，缺了归档就复现不出同一页面。
+function copySiteFiles(site) {
+  for (const file of ['index.html', 'films-data.js', 'library.html', 'me.html']) {
+    const from = path.join(root, file);
+    if (fs.existsSync(from)) fs.copyFileSync(from, path.join(site, file));
+  }
+  for (const file of ['data/weekly-picks.json', 'data/feature-film.json']) {
+    const from = path.join(root, file);
+    if (!fs.existsSync(from)) continue;
+    fs.mkdirSync(path.join(site, 'data'), { recursive: true });
+    fs.copyFileSync(from, path.join(site, 'data', path.basename(file)));
+  }
+}
+
 test('films start as drafts and only published films reach the public list', async (t) => {
   const s = await store(t);
   const added = s.addFilm(film());
@@ -206,13 +223,7 @@ test('the builder reproduces the shipped catalogue byte for byte', async (t) => 
   t.after(() => rm(dataDir, { recursive: true, force: true }));
   const site = await mkdtemp(path.join(os.tmpdir(), 'framepick-site-test-'));
   t.after(() => rm(site, { recursive: true, force: true }));
-  // 只拷构建器真正要动的文件（index.html 读写、films-data.js 写出）。整仓
-  // cpSync 会把 img/ 与 docs/ 一起搬（几百个文件），撞上沙箱的批量复制策略
-  // （CODEBUDDY_BROKER_DENY），小批量逐文件复制不受限。
-  for (const file of ['index.html', 'films-data.js', 'library.html', 'me.html']) {
-    const from = path.join(root, file);
-    if (fs.existsSync(from)) fs.copyFileSync(from, path.join(site, file));
-  }
+  copySiteFiles(site);
 
   const env = { ...process.env, FRAMEPICK_LIBRARY_DATA_DIR: dataDir };
   const run = (args) => execFileSync(node, args, { cwd: root, env, encoding: 'utf8' });
@@ -224,18 +235,49 @@ test('the builder reproduces the shipped catalogue byte for byte', async (t) => 
   run(['scripts/build-framepick-library.mjs', '--site', site, '--check']);
 });
 
+test('the hero follows the weekly pick and can be pinned by hand', async (t) => {
+  const dataDir = await mkdtemp(path.join(os.tmpdir(), 'framepick-hero-test-'));
+  t.after(() => rm(dataDir, { recursive: true, force: true }));
+  const site = await mkdtemp(path.join(os.tmpdir(), 'framepick-site-test-'));
+  t.after(() => rm(site, { recursive: true, force: true }));
+  copySiteFiles(site);
+
+  const env = { ...process.env, FRAMEPICK_LIBRARY_DATA_DIR: dataDir };
+  const run = (args) => execFileSync(node, args, { cwd: root, env, encoding: 'utf8' });
+  run(['scripts/framepick-library-cli.mjs', 'seed', '--site', site]);
+
+  const archive = JSON.parse(fs.readFileSync(path.join(root, 'data', 'weekly-picks.json'), 'utf8'));
+  const picks = (archive.weeks.at(-1)?.films || []).map((film) => film.id);
+  assert.ok(picks.length, '本周推荐是空的，无法验证首屏主推');
+  const heroOf = (html) => html.match(/<article class="feature[\s\S]*?data-open-film="([^"]+)"/)?.[1];
+  const labelOf = (html) => html.match(/<span class="feature-label">([^<]+)<\/span>/)?.[1];
+  const read = () => fs.readFileSync(path.join(site, 'index.html'), 'utf8');
+
+  // 默认：跟本周推荐第一部走，每周一随榜单自动换。
+  run(['scripts/build-framepick-library.mjs', '--site', site]);
+  assert.equal(heroOf(read()), picks[0]);
+  assert.equal(labelOf(read()), '本周主推');
+
+  // 手选覆盖：钉一部不在榜上的，角标换成「编辑选片」。
+  const catalogue = JSON.parse(fs.readFileSync(path.join(root, 'films-data.js'), 'utf8')
+    .replace(/^[\s\S]*?window\.FRAMEPICK_FILMS\s*=\s*/, '').replace(/;?\s*$/, ''));
+  const pinned = catalogue.find((film) => !picks.includes(film.id));
+  assert.ok(pinned, '作品表里每部都在本周推荐里，取不到可钉的作品');
+  run(['scripts/build-framepick-library.mjs', '--site', site, '--feature', pinned.id]);
+  assert.equal(heroOf(read()), pinned.id);
+  assert.equal(labelOf(read()), '编辑选片');
+
+  // 交回自动：下周榜单换了，主推跟着换。
+  run(['scripts/build-framepick-library.mjs', '--site', site, '--feature', 'auto']);
+  assert.equal(heroOf(read()), picks[0]);
+});
+
 test('publishing a new film adds its card and updates the counts', async (t) => {
   const dataDir = await mkdtemp(path.join(os.tmpdir(), 'framepick-grow-test-'));
   t.after(() => rm(dataDir, { recursive: true, force: true }));
   const site = await mkdtemp(path.join(os.tmpdir(), 'framepick-site-test-'));
   t.after(() => rm(site, { recursive: true, force: true }));
-  // 只拷构建器真正要动的文件（index.html 读写、films-data.js 写出）。整仓
-  // cpSync 会把 img/ 与 docs/ 一起搬（几百个文件），撞上沙箱的批量复制策略
-  // （CODEBUDDY_BROKER_DENY），小批量逐文件复制不受限。
-  for (const file of ['index.html', 'films-data.js', 'library.html', 'me.html']) {
-    const from = path.join(root, file);
-    if (fs.existsSync(from)) fs.copyFileSync(from, path.join(site, file));
-  }
+  copySiteFiles(site);
 
   const env = { ...process.env, FRAMEPICK_LIBRARY_DATA_DIR: dataDir };
   const run = (args) => execFileSync(node, args, { cwd: root, env, encoding: 'utf8' });
@@ -247,16 +289,21 @@ test('publishing a new film adds its card and updates the counts', async (t) => 
   run(['scripts/build-framepick-library.mjs', '--site', site]);
 
   // Counts follow the shipped catalogue, so adding a work never hardcodes a total.
+  // 首页只铺九部，卡片数不再等于总数：总数看 data-total / 文案，卡片数看首页上限。
   const shipped = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+  const catalogue = JSON.parse(fs.readFileSync(path.join(root, 'films-data.js'), 'utf8')
+    .replace(/^[\s\S]*?window\.FRAMEPICK_FILMS\s*=\s*/, '').replace(/;\s*$/, ''));
   const cardsOf = (html) => [...html.matchAll(/<article\b[^>]*\bdata-film="/g)].length;
-  const shortsOf = (html) => [...html.matchAll(/<article\b[^>]*\bdata-category="short"/g)].length;
-  const total = cardsOf(shipped) + 1;
-  const shorts = shortsOf(shipped) + 1;
+  const shippedCards = cardsOf(shipped);
+  const total = catalogue.length + 1;
+  const shorts = catalogue.filter((f) => f.category === 'short').length + 1;
 
   const page = fs.readFileSync(path.join(site, 'index.html'), 'utf8');
-  assert.match(page, /data-film="guiyuan"/);
-  assert.equal(cardsOf(page), total);
-  assert.match(page, new RegExp(`${total} 部公开精选`));
+  const data = fs.readFileSync(path.join(site, 'films-data.js'), 'utf8');
+  assert.match(data, /data-film="guiyuan"|"id": "guiyuan"/);
+  // 新片进片库一定进；进不进首页九部由「最近收录」决定，卡片数保持一屏。
+  assert.equal(cardsOf(page), shippedCards);
+  assert.match(page, new RegExp(`data-total="${total}"`));
   assert.match(page, new RegExp(`已收录 ${total} 部`));
   assert.match(page, new RegExp(`data-category="short" aria-pressed="false">剧情短片 <span>${shorts}<\\/span>`));
   // Delisting removes the card again without deleting the record.

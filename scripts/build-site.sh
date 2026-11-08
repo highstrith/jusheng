@@ -30,6 +30,11 @@ for file in *.js *.css; do
   cp "$file" "$OUT/"
 done
 
+# 给搜索引擎的基础文件。漏了这两个不会 404，但收录会一直起不来。
+for file in robots.txt sitemap.xml; do
+  [ -f "$file" ] && cp "$file" "$OUT/"
+done
+
 rsync -a --exclude '/raw/' --exclude '._*' img/ "$OUT/img/"
 touch "$OUT/.nojekyll"
 
@@ -76,7 +81,7 @@ python3 - "$OUT" <<'PY'
 import os, sys
 out = sys.argv[1]
 skip_js = {'serve.js'}
-expected = {'.nojekyll', 'index.html', 'library.html', 'me.html'}
+expected = {'.nojekyll', 'index.html', 'library.html', 'me.html', 'robots.txt', 'sitemap.xml'}
 for name in os.listdir('.'):
     if name.endswith(('.js', '.css')) and name not in skip_js:
         expected.add(name)

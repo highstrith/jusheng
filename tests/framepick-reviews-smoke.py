@@ -25,8 +25,14 @@ const root = process.env.FRAMEPICK_ROOT;
 // The shared service lives next to the repository, not inside the published site root,
 // so standalone layouts must point at it explicitly.
 const modulePath = process.env.FRAMEPICK_REVIEW_MODULE || path.join(root, 'server/framepick-reviews.cjs');
+// 首页只铺「最近收录」，卡上是哪几部由数据决定，所以作品白名单也从数据里读，
+// 别写死片名——写死会让新片子的离站点击被服务端当成未知作品丢掉。
+const catalogue = path.join(root, 'films-data.js');
+const filmIds = fs.existsSync(catalogue)
+  ? [...fs.readFileSync(catalogue, 'utf8').matchAll(/"id":\s*"([^"]+)"/g)].map((match) => match[1])
+  : ['xianggu'];
 const handler = fs.existsSync(modulePath) ? require(modulePath).createReviewHandler({
-  dataDir: process.env.FRAMEPICK_TEST_DATA, filmIds: ['xianggu','jinhaitang','yanran'], cooldownMs: 0
+  dataDir: process.env.FRAMEPICK_TEST_DATA, filmIds, cooldownMs: 0
 }) : async () => false;
 http.createServer(async (req,res) => {
   try {
@@ -46,24 +52,8 @@ class FramepickReviews(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.temp = tempfile.TemporaryDirectory(prefix='framepick-browser-reviews-')
-        fixture = Path(cls.temp.name) / 'fixture.cjs'
-        fixture.write_text(FIXTURE)
-        with socket.socket() as sock:
-            sock.bind(('127.0.0.1', 0))
-            port = sock.getsockname()[1]
-        cls.base = f'http://127.0.0.1:{port}'
-        cls.server = subprocess.Popen(['node', str(fixture)], env={**os.environ, 'PORT': str(port),
-            'FRAMEPICK_ROOT': str(fp.SITE_SERVE_ROOT), 'FRAMEPICK_TEST_DATA': str(Path(cls.temp.name) / 'private-data'),
-            'FRAMEPICK_REVIEW_MODULE': str(fp.ROOT / 'server' / 'framepick-reviews.cjs')},
-            stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
-        for _ in range(100):
-            try:
-                urllib.request.urlopen(cls.base + fp.url()).close()
-                break
-            except OSError:
-                time.sleep(.05)
-        else:
-            raise RuntimeError(cls.server.stderr.read().decode())
+        cls.fixture = Path(cls.temp.name) / 'fixture.cjs'
+        cls.fixture.write_text(FIXTURE)
         cls.runtime = sync_playwright().start()
         cls.browser = cls.runtime.chromium.launch(channel='chrome', headless=True)
 
@@ -71,12 +61,40 @@ class FramepickReviews(unittest.TestCase):
     def tearDownClass(cls):
         cls.browser.close()
         cls.runtime.stop()
-        cls.server.terminate()
-        cls.server.wait(timeout=5)
-        cls.server.stderr.close()
         cls.temp.cleanup()
 
+    def start_server(self):
+        """每个用例一套空数据库：评价和离站计数都写在库里，共用一份会让断言互相污染。"""
+        self.data = tempfile.TemporaryDirectory(prefix='framepick-reviews-data-')
+        self.addCleanup(self.data.cleanup)
+        with socket.socket() as sock:
+            sock.bind(('127.0.0.1', 0))
+            port = sock.getsockname()[1]
+        self.base = f'http://127.0.0.1:{port}'
+        self.server = subprocess.Popen(['node', str(self.fixture)], env={**os.environ, 'PORT': str(port),
+            'FRAMEPICK_ROOT': str(fp.SITE_SERVE_ROOT), 'FRAMEPICK_TEST_DATA': str(Path(self.data.name) / 'private-data'),
+            'FRAMEPICK_REVIEW_MODULE': str(fp.ROOT / 'server' / 'framepick-reviews.cjs')},
+            stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
+        self.addCleanup(self.stop_server)
+        for _ in range(200):
+            try:
+                urllib.request.urlopen(self.base + fp.url()).close()
+                return
+            except OSError:
+                time.sleep(.05)
+        raise RuntimeError(self.server.stderr.read().decode())
+
+    def stop_server(self):
+        self.server.terminate()
+        try:
+            self.server.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            self.server.kill()
+            self.server.wait(timeout=5)
+        self.server.stderr.close()
+
     def setUp(self):
+        self.start_server()
         self.context = self.browser.new_context(viewport={'width': 1440, 'height': 1000}, reduced_motion='reduce')
         self.observe_outbound(self.context)
         self.page = self.context.new_page()
@@ -104,14 +122,35 @@ class FramepickReviews(unittest.TestCase):
 
     def outbound_count(self, film='xianggu'):
         data = json.loads(urllib.request.urlopen(self.base + '/api/framepick/outbound/summary').read())
-        return next(entry['outboundClicks'] for entry in data['films'] if entry['filmId'] == film)
+        # 汇总只列出「有过点击」的作品，没点过的片不在列表里，按 0 算。
+        return next((entry['outboundClicks'] for entry in data['films'] if entry['filmId'] == film), 0)
 
     def observe_outbound(self, context):
         # Observe the real client's public event independently of any ranking UI.
         context.add_init_script("window.addEventListener('framepick:outbound-summary', event => { window.__observedOutbound = event.detail; });")
 
-    def wait_for_outbound(self, page, count):
-        page.wait_for_function("(n)=>window.__observedOutbound?.films?.find(f=>f.filmId==='xianggu')?.outboundClicks === n", arg=count)
+    def grid_film(self, source=None):
+        """首页只铺最近收录，具体是哪几部由数据决定：需要「页面上有卡片的作品」时问页面要。"""
+        self.page.goto(self.base + fp.url())
+        return self.page.evaluate("""(source) => {
+          const cards = [...document.querySelectorAll('#filmGrid [data-film]')];
+          const pick = cards.find((card) => !source || card.dataset.source === source) || cards[0];
+          return pick ? { id: pick.dataset.film, source: pick.dataset.source } : null;
+        }""", source)
+
+    def grid_films(self, count=2):
+        self.page.goto(self.base + fp.url())
+        ids = self.page.locator('#filmGrid [data-film]').evaluate_all('els => els.map(e => e.dataset.film)')
+        self.assertGreaterEqual(len(ids), count, '首页卡片不够做跨片验证')
+        return ids[:count]
+
+    def wait_for_outbound(self, page, count, film_id):
+        page.wait_for_function("([n, id])=>window.__observedOutbound?.films?.find(f=>f.filmId===id)?.outboundClicks === n", arg=[count, film_id])
+
+    def stub_originals(self):
+        """把原平台页换成 fixture：首页最近收录的来源不固定，抖音、B站都要打桩。"""
+        for origin in ('https://www.douyin.com/**', 'https://www.bilibili.com/**'):
+            self.context.route(origin, lambda route: route.fulfill(body='<title>Original fixture</title>'))
 
     def leave_for_original(self, page, context, selector):
         with context.expect_page() as popup:
@@ -119,42 +158,45 @@ class FramepickReviews(unittest.TestCase):
         popup.value.close()
 
     def test_outbound_native_links_share_deduplicated_counts_but_detail_never_counts(self):
-        self.context.route('https://www.douyin.com/**', lambda route: route.fulfill(body='<title>Original fixture</title>'))
-        baseline = self.outbound_count()
+        fid = self.grid_film()['id']
+        self.stub_originals()
+        baseline = self.outbound_count(fid)
         self.page.goto(self.base + fp.url())
-        self.page.locator('button[data-open-film="xianggu"]').click()
-        self.assertEqual(self.outbound_count(), baseline)
+        self.page.locator(f'button[data-open-film="{fid}"]').click()
+        self.assertEqual(self.outbound_count(fid), baseline)
         self.leave_for_original(self.page, self.context, '#detailWatch')
-        self.wait_for_outbound(self.page, baseline + 1)
+        self.wait_for_outbound(self.page, baseline + 1, fid)
         self.leave_for_original(self.page, self.context, '#detailWatch')
-        self.assertEqual(self.outbound_count(), baseline + 1)
+        self.assertEqual(self.outbound_count(fid), baseline + 1)
         self.page.keyboard.press('Escape')
         # The header/feature/detail are the same guest identity, not extra views.
-        self.leave_for_original(self.page, self.context, '.feature .watch')
-        self.assertEqual(self.outbound_count(), baseline + 1)
+        self.leave_for_original(self.page, self.context, '.feature .watch >> nth=0')
+        self.assertEqual(self.outbound_count(fid), baseline + 1)
         other = self.browser.new_context()
         self.addCleanup(other.close)
         self.observe_outbound(other)
         other.route('https://www.douyin.com/**', lambda route: route.fulfill(body='<title>Original fixture</title>'))
         second = other.new_page()
         second.goto(self.base + fp.url())
-        self.leave_for_original(second, other, '#filmGrid [data-film="xianggu"] .watch')
-        self.wait_for_outbound(second, baseline + 2)
+        self.leave_for_original(second, other, f'#filmGrid [data-film="{fid}"] .watch')
+        self.wait_for_outbound(second, baseline + 2, fid)
         self.page.reload()
-        self.wait_for_outbound(self.page, baseline + 2)
+        self.wait_for_outbound(self.page, baseline + 2, fid)
 
     def test_outbound_failure_never_blocks_original_or_invents_count(self):
-        self.context.route('https://www.douyin.com/**', lambda route: route.fulfill(body='<title>Original fixture</title>'))
-        baseline = self.outbound_count()
-        self.page.route('**/films/xianggu/outbound', lambda route: route.fulfill(status=503, json={'error': 'Temporary fixture failure'}))
+        fid = self.grid_film()['id']
+        self.stub_originals()
+        baseline = self.outbound_count(fid)
+        self.page.route(f'**/films/{fid}/outbound', lambda route: route.fulfill(status=503, json={'error': 'Temporary fixture failure'}))
         self.page.goto(self.base + fp.url())
-        self.leave_for_original(self.page, self.context, '#filmGrid [data-film="xianggu"] .watch')
-        self.assertEqual(self.outbound_count(), baseline)
+        self.leave_for_original(self.page, self.context, f'#filmGrid [data-film="{fid}"] .watch')
+        self.assertEqual(self.outbound_count(fid), baseline)
         expect(self.page.locator('#filmDialog')).not_to_be_visible()
 
     def test_delayed_initial_outbound_summary_cannot_replace_new_count(self):
-        baseline = self.outbound_count()
-        self.context.route('https://www.douyin.com/**', lambda route: route.fulfill(body='<title>Original fixture</title>'))
+        fid = self.grid_film()['id']
+        baseline = self.outbound_count(fid)
+        self.stub_originals()
         self.page.add_init_script("""const fetchOutbound = window.fetch; let firstOutbound = true;
           window.fetch = (url, options) => {
             const response = fetchOutbound(url, options);
@@ -165,10 +207,19 @@ class FramepickReviews(unittest.TestCase):
             return response;
           };""")
         self.page.goto(self.base + fp.url())
-        self.leave_for_original(self.page, self.context, '#filmGrid [data-film="xianggu"] .watch')
-        self.wait_for_outbound(self.page, baseline + 1)
+        self.leave_for_original(self.page, self.context, f'#filmGrid [data-film="{fid}"] .watch')
+        self.wait_for_outbound(self.page, baseline + 1, fid)
         self.page.wait_for_timeout(1400)
-        self.assertEqual(self.page.evaluate("window.__observedOutbound.films.find(f=>f.filmId==='xianggu').outboundClicks"), baseline + 1)
+        self.assertEqual(self.page.evaluate("(id)=>window.__observedOutbound.films.find(f=>f.filmId===id).outboundClicks", fid), baseline + 1)
+
+    def choose_rating_basis(self, basis='community', rating='8'):
+        """筛选控件随片库收进 library.html，首页只保留状态；测试直接改状态并触发事件。"""
+        self.page.evaluate("""([basis, rating]) => {
+          for (const [id, value] of [['scoreBasis', basis], ['scoreFilter', rating]]) {
+            const el = document.getElementById(id);
+            if (el) { el.value = value; el.dispatchEvent(new Event('change', { bubbles: true })); }
+          }
+        }""", [basis, rating])
 
     def hold_initial_summary(self):
         self.page.add_init_script("""const summaryFetch=window.fetch;window.fetch=async(...args)=>{
@@ -185,41 +236,43 @@ class FramepickReviews(unittest.TestCase):
         self.page.evaluate("async()=>{window.__releaseSummary();await new Promise(resolve=>setTimeout(resolve,100));}")
 
     def test_slow_initial_summary_keeps_other_films_after_detail_load(self):
+        open_id, reviewed_id = self.grid_films(2)
         visitor = self.runtime.request.new_context(base_url=self.base)
         self.addCleanup(visitor.dispose)
         self.assertEqual(visitor.get('/api/framepick/session').status, 200)
-        self.addCleanup(lambda: visitor.delete('/api/framepick/films/jinhaitang/reviews'))
-        self.assertEqual(visitor.post('/api/framepick/films/jinhaitang/reviews', data={
+        self.addCleanup(lambda: visitor.delete(f'/api/framepick/films/{reviewed_id}/reviews'))
+        self.assertEqual(visitor.post(f'/api/framepick/films/{reviewed_id}/reviews', data={
             'nickname': '另一部影片的访客', 'text': '已存在的九分评价', 'rating': 9}).status, 200)
         self.hold_initial_summary()
-        self.open_review(film='xianggu')
+        self.open_review(film=open_id)
         self.release_initial_summary()
         self.page.keyboard.press('Escape')
-        expect(self.page.locator('[data-film="jinhaitang"] .community-score')).to_contain_text('9.0 / 10')
-        self.page.locator('#scoreBasis').select_option('community')
-        self.page.locator('#scoreFilter').select_option('8')
+        expect(self.page.locator(f'[data-film="{reviewed_id}"] .community-score')).to_contain_text('9.0 / 10')
+        self.choose_rating_basis()
         expect(self.page.locator('#filmGrid [data-film]:visible')).to_have_count(1)
-        expect(self.page.locator('#filmGrid [data-film]:visible')).to_have_attribute('data-film', 'jinhaitang')
+        expect(self.page.locator('#filmGrid [data-film]:visible')).to_have_attribute('data-film', reviewed_id)
 
     def test_slow_failed_summary_keeps_newly_published_score(self):
+        fid = self.grid_films(1)[0]
         self.page.route('**/api/framepick/summary', lambda route: route.fulfill(
             status=503, content_type='application/json', body='{"error":"汇总暂不可用"}'))
         self.hold_initial_summary()
-        self.open_review(film='yanran')
-        self.addCleanup(lambda: self.context.request.delete(self.base + '/api/framepick/films/yanran/reviews'))
+        self.open_review(film=fid)
+        self.addCleanup(lambda: self.context.request.delete(self.base + f'/api/framepick/films/{fid}/reviews'))
         self.submit(self.page, '旧汇总失败前成功发布', '9')
         self.release_initial_summary()
         self.page.keyboard.press('Escape')
-        expect(self.page.locator('[data-film="yanran"] .community-score')).to_contain_text('9.0 / 10')
-        self.page.locator('#scoreBasis').select_option('community')
-        self.page.locator('#scoreFilter').select_option('8')
+        expect(self.page.locator(f'[data-film="{fid}"] .community-score')).to_contain_text('9.0 / 10')
+        self.choose_rating_basis()
         expect(self.page.locator('#filmGrid [data-film]:visible')).to_have_count(1)
 
     def test_failed_anonymous_draft_stays_blank_after_reopen_and_real_retry(self):
-        self.open_review(film='xianggu')
-        self.addCleanup(lambda: self.context.request.delete(self.base + '/api/framepick/films/xianggu/reviews'))
+        # 草稿活在页面内存里，必须用首页卡片重开同一部作品，不能整页跳转。
+        fid = self.grid_films(1)[0]
+        self.open_review(film=fid)
+        self.addCleanup(lambda: self.context.request.delete(self.base + f'/api/framepick/films/{fid}/reviews'))
         self.submit(self.page, '原有公开评价', '8', '原有公开昵称')
-        self.page.route('**/api/framepick/films/xianggu/reviews', lambda route:
+        self.page.route(f'**/api/framepick/films/{fid}/reviews', lambda route:
             route.fulfill(status=503, content_type='application/json', body='{"error":"暂时失败"}')
             if route.request.method == 'POST' else route.continue_())
         self.page.get_by_label('访客昵称').fill('')
@@ -228,15 +281,15 @@ class FramepickReviews(unittest.TestCase):
         expect(self.page.locator('#reviewError')).to_contain_text('草稿已保留')
         expect(self.page.get_by_label('访客昵称')).to_have_value('')
         self.page.keyboard.press('Escape')
-        self.page.locator('button[data-open-film="xianggu"]').click()
+        self.page.locator(f'button[data-open-film="{fid}"]').click()
         self.page.get_by_role('tab', name='站内评价', exact=True).click()
         expect(self.page.locator('#reviewText')).to_be_enabled()
         expect(self.page.get_by_label('评价正文')).to_have_value('选择匿名后保留的草稿')
         expect(self.page.get_by_label('访客昵称')).to_have_value('')
-        self.page.unroute('**/api/framepick/films/xianggu/reviews')
+        self.page.unroute(f'**/api/framepick/films/{fid}/reviews')
         self.page.locator('#reviewSubmit').click()
         expect(self.page.locator('#reviewStatus')).to_contain_text('已保存')
-        response = self.context.request.get(self.base + '/api/framepick/films/xianggu/reviews')
+        response = self.context.request.get(self.base + f'/api/framepick/films/{fid}/reviews')
         self.assertEqual(response.status, 200)
         self.assertEqual(response.json()['yourReview']['nickname'], '访客')
         expect(self.page.locator('#reviewList')).not_to_contain_text('原有公开昵称')
@@ -245,7 +298,7 @@ class FramepickReviews(unittest.TestCase):
         # 不登录就是访客，顶栏不放开关；说明留在评价区里，点完回到原按钮。
         self.page.goto(self.base + fp.url())
         expect(self.page.locator('#guestMode')).to_have_count(0)
-        self.page.locator('button[data-open-film="xianggu"]').click()
+        self.page.goto(self.base + fp.url('?film=xianggu'))
         self.page.get_by_role('tab', name='站内评价', exact=True).click()
         self.page.locator('#guestHow').click()
         expect(self.page.locator('#guestDialog')).to_contain_text('浏览器')
@@ -253,8 +306,7 @@ class FramepickReviews(unittest.TestCase):
         expect(self.page.locator('#guestHow')).to_be_focused()
 
     def test_guest_entry_and_original_site_separation(self):
-        self.page.goto(self.base + fp.url())
-        self.page.locator('button[data-open-film="xianggu"]').click()
+        self.page.goto(self.base + fp.url('?film=xianggu'))
         expect(self.page.get_by_role('tabpanel', name='作品介绍')).to_contain_text('橘生梦厂整理')
         self.page.get_by_role('tab', name='原平台评价', exact=True).click()
         panel = self.page.get_by_role('tabpanel', name='原平台评价')
@@ -264,14 +316,15 @@ class FramepickReviews(unittest.TestCase):
         expect(self.page.locator('#detailScore')).to_contain_text('编辑评分：待评')
 
     def test_two_browsers_share_refresh_upsert_delete_and_rating_basis(self):
+        fid = self.grid_films(1)[0]
         other = self.browser.new_context()
         self.addCleanup(other.close)
         second = other.new_page()
-        self.open_review()
+        self.open_review(film=fid)
         self.submit(self.page, '<img src=x onerror=alert(1)>第一条真实共享评价', '8', '甲访客')
         expect(self.page.locator('#reviewList')).to_contain_text('本人')
         expect(self.page.locator('#reviewList img')).to_have_count(0)
-        self.open_review(second)
+        self.open_review(second, film=fid)
         expect(second.locator('#reviewList')).to_contain_text('第一条真实共享评价')
         expect(second.locator('#reviewList')).not_to_contain_text('本人')
         self.submit(second, '第二位访客的评价', '10', '乙访客')
@@ -284,21 +337,21 @@ class FramepickReviews(unittest.TestCase):
         expect(self.page.locator('#reviewSummary')).to_contain_text('8.0')
         expect(self.page.locator('#reviewSummary')).to_contain_text('2 人评分')
         self.page.keyboard.press('Escape')
-        self.page.locator('#scoreBasis').select_option('community')
-        self.page.locator('#scoreFilter').select_option('8')
+        self.choose_rating_basis()
         expect(self.page.locator('#filmGrid [data-film]:visible')).to_have_count(1)
-        expect(self.page.locator('#filmGrid [data-film]:visible')).to_have_attribute('data-film', 'xianggu')
+        expect(self.page.locator('#filmGrid [data-film]:visible')).to_have_attribute('data-film', fid)
         self.assertIn('scoreBasis=community', self.page.url)
         self.page.reload()
         expect(self.page.locator('#scoreBasis')).to_have_value('community')
-        self.page.locator('button[data-open-film="xianggu"]').click()
+        # 撤回要在同一部作品上做：首页只有「最近收录」九部，别再按片名点卡片。
+        self.page.goto(self.base + fp.url('?film=' + fid))
         self.page.get_by_role('tab', name='站内评价', exact=True).click()
         expect(self.page.locator('#reviewDelete')).to_be_visible()
         self.page.locator('#reviewDelete').click()
         expect(self.page.locator('#reviewStatus')).to_contain_text('已撤回')
         expect(self.page.locator('#reviewSummary')).to_contain_text('10.0')
         expect(self.page.locator('#reviewSummary')).to_contain_text('1 人评分')
-        self.open_review(second)
+        self.open_review(second, film=fid)
         second.locator('#reviewDelete').click()
         expect(second.locator('#reviewSummary')).to_contain_text('暂无站内评分')
 
@@ -361,13 +414,15 @@ class FramepickReviews(unittest.TestCase):
             return new Response(body,{status:response.status,headers:response.headers});
           });return result;
         };""")
-        self.open_review(film='yanran')
+        fid = self.grid_films(1)[0]
+        self.open_review(film=fid)
         self.page.wait_for_function('window.__oldSummaryReady === true')
         self.submit(self.page, '等待期间发布的新评分', '9', '新评分访客')
         self.page.wait_for_timeout(1100)
         self.page.keyboard.press('Escape')
-        expect(self.page.locator('[data-film="yanran"] .community-score')).to_contain_text('9.0 / 10')
-        self.open_review(film='yanran')
+        expect(self.page.locator(f'[data-film="{fid}"] .community-score')).to_contain_text('9.0 / 10')
+        # 收尾撤回到刚评的那部作品上，别换成另一部（那边根本没有本人的评价）。
+        self.open_review(film=fid)
         self.page.locator('#reviewDelete').click()
         expect(self.page.locator('#reviewStatus')).to_contain_text('已撤回')
 

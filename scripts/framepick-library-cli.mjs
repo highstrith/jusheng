@@ -41,8 +41,43 @@ function print(value) {
 }
 
 // One-shot import of the hand-written cards that shipped before this store existed.
+// 首页只铺九部之后，卡片数已经不等于片库总数（55），所以优先读生成器写出的
+// films-data.js（全量），没有它才退回解析 index.html 的卡片。
+function seedFromData(siteDir) {
+  const file = path.join(siteDir, 'films-data.js');
+  if (!fs.existsSync(file)) return null;
+  const source = fs.readFileSync(file, 'utf8');
+  const start = source.indexOf('[');
+  const end = source.lastIndexOf(']');
+  if (start < 0 || end < start) return null;
+  const films = JSON.parse(source.slice(start, end + 1));
+  const created = [];
+  const skipped = [];
+  for (const film of films) {
+    if (!film.id) continue;
+    if (store.listFilms().some((existing) => existing.id === film.id)) { skipped.push(film.id); continue; }
+    store.addFilm({
+      id: film.id, title: film.title, author: film.author, source: film.source,
+      sourceUrl: film.sourceUrl, category: film.category, genres: film.genres,
+      kind: film.kind, access: film.access, runtime: film.runtime, cover: film.cover,
+      coverAlt: film.coverAlt, coverWidth: film.coverWidth, coverHeight: film.coverHeight,
+      coverNote: film.coverNote, originalReleaseDate: film.published || '',
+      description: film.description, recommendation: film.recommendation || '',
+      episode: film.episode || '', completion: film.completion || '',
+      volume: film.volume || '', relation: film.relation || '',
+      editorScore: film.score === null || film.score === undefined ? '' : film.score,
+      intakeDate: film.intakeDate,
+    }, { actor: 'seed' });
+    for (const status of ['reviewing', 'approved', 'scheduled', 'published']) store.setStatus(film.id, status, { actor: 'seed' });
+    created.push(film.id);
+  }
+  return { created, skipped, total: store.listFilms().length };
+}
+
 function seed() {
   const siteDir = path.resolve(flag('site') || '.');
+  const fromData = seedFromData(siteDir);
+  if (fromData) { print(fromData); return; }
   const source = fs.readFileSync(path.join(siteDir, 'index.html'), 'utf8');
   const cards = [...source.matchAll(/<article\b[^>]*\bdata-film="([^"]+)"[^>]*>([\s\S]*?)<\/article>/g)];
   const attr = (tag, name) => tag.match(new RegExp(`\\b${name}="([^"]*)"`))?.[1] ?? '';

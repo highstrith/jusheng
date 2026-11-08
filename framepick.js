@@ -26,8 +26,56 @@
     };
   });
   const byId = new Map(films.map((film) => [film.id, film]));
+  // 首页只铺编辑精选，本周推荐和主推里可能有没进栅格的片。它们没有卡片，
+  // 只用于详情弹窗；数据由生成器写在 window.FRAMEPICK_DETAIL_EXTRAS 里。
+  const extras = new Map();
+  // 把一份精简记录变成弹窗能用的 film 对象：没有卡片，只有详情要用的字段。
+  const toFilm = (raw) => {
+    if (!raw || !raw.id) return null;
+    const image = new Image();
+    image.src = raw.cover;
+    image.alt = raw.coverAlt || raw.title || '';
+    image.setAttribute('width', raw.coverWidth || '');
+    image.setAttribute('height', raw.coverHeight || '');
+    return {
+      id: raw.id, card: null, index: -1, score: raw.score ?? null, communityScore: null,
+      category: raw.category, genres: raw.genres || [], source: raw.source,
+      access: raw.access || 'free', date: raw.intakeDate || '',
+      published: raw.published || '', title: raw.title || '', author: raw.author || '',
+      kind: raw.kind || '', description: raw.description || '', reason: raw.recommendation || '',
+      episode: raw.episode || '', completion: raw.completion || '', statusLabel: raw.statusLabel || '',
+      volume: raw.volume || '', relation: raw.relation || '', image, link: raw.sourceUrl, search: ''
+    };
+  };
+  for (const raw of (window.FRAMEPICK_DETAIL_EXTRAS || [])) {
+    const film = toFilm(raw);
+    if (film && !byId.has(film.id) && !extras.has(film.id)) extras.set(film.id, film);
+  }
+  const lookupFilm = (id) => byId.get(id) || extras.get(id);
+
+  // 分享链接可能指向不在首页九部里的作品。真正要用时才去取完整作品表（library.html 也用它），
+  // 平时不下载，首页体积不为「没被点开的作品」买单。
+  let catalogueRequest = null;
+  function loadCatalogue() {
+    if (catalogueRequest) return catalogueRequest;
+    catalogueRequest = new Promise((resolve) => {
+      if (Array.isArray(window.FRAMEPICK_FILMS)) return resolve();
+      const script = document.createElement('script');
+      script.src = 'films-data.js';
+      script.onload = script.onerror = () => resolve();
+      document.head.appendChild(script);
+    }).then(() => {
+      for (const raw of (window.FRAMEPICK_FILMS || [])) {
+        const film = toFilm(raw);
+        if (film && !byId.has(film.id) && !extras.has(film.id)) extras.set(film.id, film);
+      }
+    });
+    return catalogueRequest;
+  }
   // 页面上的「N 部筛过的短片」跟着数据走，作品增减时不必再手改文案。
-  for (const node of document.querySelectorAll('[data-film-total]')) node.textContent = String(films.length);
+  // 首页栅格只放精选，作品总数由 data-total 带着走，别再拿卡片数当总数。
+  const catalogueTotal = () => Number(grid.dataset.total) || films.length;
+  for (const node of document.querySelectorAll('[data-film-total]')) node.textContent = String(catalogueTotal());
   // A film is watched where its author published it, so the labels follow the card.
   const SOURCE_LABEL = { douyin: '抖音', xiaohongshu: '小红书', bilibili: '哔哩哔哩', youtube: 'YouTube', x: 'X' };
   const CATEGORY_LABEL = { film: '完整电影', series: '系列短剧', short: '剧情短片', ad: '商业广告', music: '音乐影像', experimental: '实验影像' };
@@ -45,7 +93,9 @@
   let saved = new Set();
   try {
     const parsed = JSON.parse(localStorage.getItem(storageKey) || '[]');
-    if (Array.isArray(parsed)) saved = new Set(parsed.filter((id) => typeof id === 'string' && byId.has(id)));
+    // 只校验是字符串：首页只铺九部，收藏可能指向页面没引用的作品，
+    // 用 lookupFilm 过滤会把这些收藏静默丢掉，计数也跟着变少。
+    if (Array.isArray(parsed)) saved = new Set(parsed.filter((id) => typeof id === 'string'));
   } catch { storageAvailable = false; }
   let state = { ...defaults };
   let lastVisible = [];
@@ -65,7 +115,9 @@
     const params = new URL(location.href).searchParams;
     // ?perPage=all 一次铺开全部，给「查看全部」链接和自动化测试用。
     const all = params.get('perPage') === 'all';
-    state = { ...defaults, limit: all ? Infinity : pageSize(), q: (params.get('q') || '').slice(0, 100), saved: params.get('saved') === '1', hideWatched: params.get('hideWatched') !== '0' };
+    // 首页只铺精选时，栅格里的卡片数不等于片库总数：一页全给，不翻页。
+    const homeLimit = Number(grid.dataset.limit);
+    state = { ...defaults, limit: all ? Infinity : (Number.isFinite(homeLimit) && homeLimit > 0 ? homeLimit : pageSize()), q: (params.get('q') || '').slice(0, 100), saved: params.get('saved') === '1', hideWatched: params.get('hideWatched') !== '0' };
     const page = Number(params.get('page'));
     if (Number.isFinite(page) && page >= 1) state.page = Math.floor(page);
     const category = params.get('category');
@@ -181,19 +233,30 @@
     const hiddenWatched = matchingExceptWatched.length;
     const suffix = state.saved ? '已收藏作品' : '精选作品';
     const range = shown.length ? `第 ${start + 1}–${start + shown.length} 部` : '';
+    const catalogue = catalogueTotal();
+    const previewOnly = catalogue > total;
     const countText = paged && lastPage > 1
       ? `共 ${total} 部${suffix} · ${range} · 第 ${state.page} / ${lastPage} 页`
-      : `${total} 部${suffix}`;
+      : previewOnly
+        ? `共 ${catalogue} 部 · 首页收录 ${total} 部`
+        : `${total} 部${suffix}`;
     $('#resultCount').textContent = countText + (state.hideWatched && hiddenWatched ? ` · 已隐藏 ${hiddenWatched} 部已看` : '');
     $('#emptyState').hidden = total !== 0;
-    $('#emptyMembership').hidden = state.access !== 'paid';
+    const emptyMembership = $('#emptyMembership');
+    if (emptyMembership) emptyMembership.hidden = state.access !== 'paid';
     renderPager(lastPage);
     const loadMore = $('#loadMore');
     if (loadMore) loadMore.hidden = Boolean(query) || state.limit === Infinity;
     if (loadMore && !loadMore.hidden) {
-      $('#loadMoreNote').textContent = '片库里还能按题材、来源、评分再筛一遍。';
+      $('#loadMoreNote').textContent = state.saved
+        ? '首页只铺九部，收藏的其它作品在片库里看。'
+        : '片库里还能按题材、来源、评分再筛一遍。';
       const link = $('#loadMoreLink');
-      if (link) link.textContent = `去片库看全部 ${total} 部`;
+      if (link) {
+        // 收藏筛选在首页只能覆盖九部，完整收藏视图交给片库。
+        link.textContent = state.saved ? `去片库看我的收藏（${saved.size} 部）` : `去片库看全部 ${catalogueTotal()} 部`;
+        link.href = state.saved ? 'library.html?saved=1' : 'library.html';
+      }
     }
     let title = '暂时没有匹配的作品';
     let copy = '试试其他题材，或清除筛选条件。';
@@ -203,6 +266,9 @@
     } else if (state.saved && saved.size === 0) {
       title = '还没有收藏的作品';
       copy = '点击作品上的收藏按钮，把想看的好片留在这台设备。';
+    } else if (state.saved && total === 0) {
+      title = '这九部里没有你的收藏';
+      copy = `收藏的 ${saved.size} 部在首页九部之外，去片库能看完整的收藏列表。`;
     } else if (state.hideWatched && total === 0 && hiddenWatched > 0) {
       title = '看过的都标记好了';
       copy = `这批筛选里的 ${hiddenWatched} 部都已看过，已从列表隐藏。切回「显示已看」，或在「我的」页面看观看历史。`;
@@ -310,8 +376,15 @@
   }
 
   function openFilm(id, push = false, trigger = null) {
-    const film = byId.get(id);
-    if (!film) return;
+    const film = lookupFilm(id);
+    if (!film) {
+      if (trigger) opener = trigger;
+      loadCatalogue().then(() => {
+        if (lookupFilm(id)) openFilm(id, push, trigger);
+        else closeFilmUI();
+      });
+      return;
+    }
     currentFilm = film;
     if (trigger) opener = trigger;
     $('#detailTitle').textContent = film.title;
@@ -382,9 +455,11 @@
     syncControls();
     render();
     const id = new URL(location.href).searchParams.get('film');
-    if (!byId.has(id)) { closeFilmUI(); return; }
+    if (!id) { closeFilmUI(); return; }
+    if (!lookupFilm(id)) { loadCatalogue().then(() => openFilm(id)); return; }
     // 深链进来的作品可能排在别的页，先翻到它那一页再打开。
-    if (byId.get(id).card.hidden && Number.isFinite(state.limit) && !state.q.trim()) {
+    const target = byId.get(id);
+    if (target && target.card && target.card.hidden && Number.isFinite(state.limit) && !state.q.trim()) {
       const index = lastVisible.indexOf(id);
       if (index >= 0) { state.page = Math.floor(index / state.limit) + 1; render(); }
     }
@@ -501,6 +576,154 @@
     film.card.querySelector('.score').textContent = film.score.toFixed(1);
     film.card.querySelector('.score').setAttribute('aria-label', '编辑评分：' + film.score.toFixed(1) + '分');
   }
+  // 首屏轮播：只靠 transform + 定时器，不引库。标记在 static HTML 里，这里只负责换页。
+  function initHeroCarousel() {
+    const hero = $('#heroCarousel');
+    const track = hero && hero.querySelector('.hero-track');
+    if (!track) return;
+    const real = [...track.children];
+    if (real.length < 2) return;
+    // 无限循环：末尾挂一张第一张的副本。走到副本时看不出换页，下一拍再无声地跳回真的第一张，
+    // 于是永远朝同一个方向走，不会像原来那样从最后一张倒着滑回开头。
+    const edge = real.length;
+    const clone = real[0].cloneNode(true);
+    clone.classList.add('is-clone');
+    clone.setAttribute('aria-hidden', 'true');
+    clone.setAttribute('inert', '');
+    // 副本只负责画面：不带打开详情的钩子，也不会被算成一次离站点击。
+    for (const node of clone.querySelectorAll('[data-open-film], [data-outbound-film]')) {
+      node.removeAttribute('data-open-film');
+      node.removeAttribute('data-outbound-film');
+    }
+    for (const node of clone.querySelectorAll('img')) node.removeAttribute('fetchpriority');
+    track.append(clone);
+
+    const slides = [...track.children];
+    const count = real.length;
+    const dots = [...hero.querySelectorAll('[data-hero-dot]')];
+    const reduce = matchMedia('(prefers-reduced-motion: reduce)');
+    const AUTOPLAY_MS = 7000;
+    let index = 0;
+    let timer = 0;
+    // 停在副本上时，读者看到的其实是第一张，无障碍和圆点都按第一张算。
+    const shown = () => (index === edge ? 0 : index);
+
+    const sync = () => {
+      const visible = shown();
+      slides.forEach((slide, i) => {
+        const active = i === visible;
+        slide.classList.toggle('is-active', active);
+        // 副本永远留在无障碍树外，它的内容在第一张里已经有一份。
+        if (i === edge) return;
+        if (active) { slide.removeAttribute('inert'); slide.removeAttribute('aria-hidden'); }
+        else { slide.setAttribute('inert', ''); slide.setAttribute('aria-hidden', 'true'); }
+      });
+    };
+    const syncDots = () => {
+      const visible = shown();
+      dots.forEach((dot, i) => {
+        if (i === visible) dot.setAttribute('aria-current', 'true');
+        else dot.removeAttribute('aria-current');
+      });
+    };
+    // 提前把下一张的封面要下来：切过去的那一刻不该是空框。
+    const warm = (i) => {
+      const img = slides[i] && slides[i].querySelector('img');
+      if (img && img.loading === 'lazy') img.loading = 'eager';
+    };
+    const paint = (animate = true) => {
+      if (animate) {
+        track.style.transform = 'translate3d(' + -index * 100 + '%,0,0)';
+      } else {
+        track.style.transition = 'none';
+        track.style.transform = 'translate3d(' + -index * 100 + '%,0,0)';
+        // 强制回流，下一次改 transform 才仍然会走过渡。
+        void track.offsetWidth;
+        track.style.transition = '';
+      }
+      sync();
+      syncDots();
+      warm((shown() + 1) % count);
+    };
+    const jump = (target) => { index = target; paint(false); };
+    // 前进：正常加一；已经在副本上就先无痕回到第一张，再往前走一步。
+    const forward = () => {
+      if (index === edge) jump(0);
+      index += 1;
+      paint();
+    };
+    // 后退：在第一张时先无痕挪到副本（画面一样），再往左滑出最后一张。
+    const back = () => {
+      if (index === 0) jump(edge);
+      index -= 1;
+      paint();
+    };
+    const goTo = (target) => {
+      if (index === edge) jump(0);
+      if (target === index) return;
+      index = target;
+      paint();
+    };
+    const stop = () => { if (timer) { clearInterval(timer); timer = 0; } };
+    const start = () => {
+      stop();
+      if (reduce.matches || document.hidden) return;
+      timer = setInterval(forward, AUTOPLAY_MS);
+    };
+    // 手点／按键之后重新计时，免得刚切过去两秒又被自动换走。
+    const step = (delta) => { if (delta > 0) forward(); else back(); start(); };
+
+    const prev = hero.querySelector('[data-hero-prev]');
+    const next = hero.querySelector('[data-hero-next]');
+    if (prev) prev.addEventListener('click', () => step(-1));
+    if (next) next.addEventListener('click', () => step(1));
+    dots.forEach((dot, i) => dot.addEventListener('click', () => { goTo(i); start(); }));
+    hero.addEventListener('keydown', (event) => {
+      if (event.key === 'ArrowLeft') { event.preventDefault(); step(-1); }
+      if (event.key === 'ArrowRight') { event.preventDefault(); step(1); }
+    });
+    // 手机上人人都会先横向划一下：横划换页，竖向仍然交给页面滚动。
+    let startX = 0;
+    let startY = 0;
+    let dragging = false;
+    let swallowClick = 0;
+    track.addEventListener('pointerdown', (event) => {
+      if (event.pointerType === 'mouse') return;
+      startX = event.clientX;
+      startY = event.clientY;
+      dragging = true;
+    });
+    track.addEventListener('pointercancel', () => { dragging = false; });
+    track.addEventListener('pointerup', (event) => {
+      if (!dragging) return;
+      dragging = false;
+      const dx = event.clientX - startX;
+      const dy = event.clientY - startY;
+      if (Math.abs(dx) < 48 || Math.abs(dx) < Math.abs(dy) * 1.2) return;
+      // 划完不要顺带点开详情：把紧随其后的那次 click 吞掉。
+      swallowClick = 1;
+      setTimeout(() => { swallowClick = 0; }, 400);
+      step(dx < 0 ? 1 : -1);
+    }, true);
+    track.addEventListener('click', (event) => {
+      if (!swallowClick) return;
+      swallowClick = 0;
+      event.preventDefault();
+      event.stopPropagation();
+    }, true);
+    // 鼠标停在大图上、键盘焦点落在控件里都先暂停，别在人正看的时候换页。
+    hero.addEventListener('mouseenter', stop);
+    hero.addEventListener('mouseleave', start);
+    hero.addEventListener('focusin', stop);
+    hero.addEventListener('focusout', (event) => { if (!hero.contains(event.relatedTarget)) start(); });
+    document.addEventListener('visibilitychange', () => (document.hidden ? stop() : start()));
+    if (reduce.addEventListener) reduce.addEventListener('change', start);
+
+    paint(false);
+    start();
+  }
+
+  initHeroCarousel();
   document.documentElement.classList.add('js');
   syncFromURL();
   window.dispatchEvent(new CustomEvent('framepick:catalogue-ready'));
