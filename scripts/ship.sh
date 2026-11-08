@@ -113,7 +113,7 @@ if [ "$PUSH" = "0" ]; then
   exit 0
 fi
 
-step "6/6 提交、推送、等部署、复核线上"
+step "6/6 提交、推送、等部署、同步主站、复核线上"
 if git diff --quiet && git diff --cached --quiet; then
   echo "  没有文件改动，跳过提交"
   PUSHED=0
@@ -148,14 +148,28 @@ if [ "$PUSHED" = "1" ]; then
   esac
 fi
 
+# 主站是 www.orangeaistudio.com/orangedream/（阿里云香港 OSS）；GitHub Pages 那份只当备份。
+# 只同步片单，作品集那 136MB 不在每轮发布里传（要更作品集用 bash deploy-orange.sh 全量）。
+if command -v ossutil >/dev/null 2>&1; then
+  if bash ../deploy-orange.sh --reel-only > /tmp/jusheng-oss-sync.log 2>&1; then
+    echo "  主站已同步：https://www.orangeaistudio.com/orangedream/"
+  else
+    echo "  ! 主站同步失败，详见 /tmp/jusheng-oss-sync.log（GitHub 那份已正常部署，不受影响）"
+  fi
+else
+  echo "  跳过主站同步：本机没有 ossutil"
+fi
+
 sleep 2
-curl -s --compressed "https://highstrith.github.io/jusheng/?cb=$(date +%s)" -o /tmp/jusheng-live.html
-python3 - <<'PY'
-import re
+for host in "https://www.orangeaistudio.com/orangedream/" "https://highstrith.github.io/jusheng/"; do
+  curl -s --compressed "$host?cb=$(date +%s)" -o /tmp/jusheng-live.html || true
+  HOST="$host" python3 - <<'PY'
+import re, os
 h = open('/tmp/jusheng-live.html', encoding='utf-8').read()
 cards = len(re.findall(r'<article class="card"', h))
 picks = len(re.findall(r'<li class="pick-card', h))
-print(f'  线上首页：{cards} 张卡片 · 本周推荐 {picks} 张 · 标题含「橘生梦厂」：{"橘生梦厂" in h}')
+print(f'  {os.environ["HOST"]}  {cards} 张卡片 · 本周推荐 {picks} 张')
 PY
+done
 
 printf '\n\033[32m完成\033[0m\n'

@@ -301,6 +301,25 @@ class FramepickPicks(unittest.TestCase):
         expect(page.locator('.hero-slide').first).to_be_visible()
         expect(page.locator('.hero-controls')).to_be_hidden()
 
+    def test_footer_and_nav_links_stay_inside_the_site(self):
+        """站点挂在 /jusheng/ 子路径下：写 ../ 就会跳到不存在的上级目录。
+
+        2026-11-08 线上真实坏链：页脚「橘小桔的主页」写的是 ../#filmRecommendations，
+        解析成 https://highstrith.github.io/ —— 那个地址返回 404「Site not found」。
+        作品集其实在 /highstrithstate/（主域名 www.orangeaistudio.com/highstrith/）。
+        """
+        for name in ['index.html', 'library.html', 'me.html']:
+            html = (ROOT / name).read_text(encoding='utf-8')
+            for href in re.findall(r'href="([^"]+)"', html):
+                if href.startswith(('http://', 'https://', 'mailto:', 'data:', '#')):
+                    continue
+                self.assertFalse(href.startswith('../'), f'{name} 有跳出站点根的链接：{href}')
+            footer = re.search(r'<footer[\s\S]*?</footer>', html)
+            self.assertIsNotNone(footer, f'{name} 找不到页脚')
+            for href in re.findall(r'href="([^"]+)"', footer.group(0)):
+                self.assertTrue(href.startswith(('http', 'mailto:', './')),
+                                f'{name} 页脚外链必须写绝对地址，不能靠相对路径猜：{href}')
+
     def test_detail_preserves_original_release_date_precision(self):
         # 首页只铺最近收录，具体某部片不一定在栅格里：用分享链接打开，验证日期精度。
         for fid, date in [('pinzi', '2026.02.03'), ('yanran', '2026.08')]:
