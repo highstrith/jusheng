@@ -38,6 +38,9 @@ done
 step() { printf '\n\033[1m▸ %s\033[0m\n' "$1"; }
 fail() { printf '\033[31m✗ %s\033[0m\n' "$1" >&2; exit 1; }
 
+# ossutil 装在 ~/bin（deploy-orange.sh 自己也这么加，但 ship 里要先能找到它才知道能不能同步主站）
+export PATH="$HOME/bin:$PATH"
+
 # 这一版上线了没有？用产物比对，不靠 Actions API —— 未认证的 API 每小时只有 60 次，
 # 自动化两轮一跑就撞限流；拿不到状态时 `set -u` 会把脚本崩在 case 上（2026-11-08 真实踩过）。
 #   1 = 线上 index.html 与本地产物字节一致（最严格）
