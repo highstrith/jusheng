@@ -38,8 +38,8 @@
 - 站点只由三张页面 + 根目录 js/css + `img/` 组成，白名单写在 `scripts/build-site.sh`，
   本地与 CI 共用。往仓库根目录加文件时先想清楚它该不该进产物。
 - `public/` 是构建产物，不进 Git。
-- 发布：推 `main` 才部署（`release/*` 分支不上线）。交付「已发布」前必须确认对应
-  Actions 任务 success，并核对线上页面。部署失败若是 github-pages 产物报错，
+- 发布：推 `main` 才部署（`release/*` 分支不上线）。**对外主站是 `https://www.orangeaistudio.com/orangedream/`（阿里云香港 OSS）**，GitHub Pages 的 `highstrith.github.io/jusheng/` 只是备份；`./scripts/ship.sh` 会在推完 main、确认 Pages 部署后自动跑一遍 `../deploy-orange.sh --reel-only` 把片单同步到主站，所以一条命令两边都是新的。只改作品集才需要手动跑全量的 `bash deploy-orange.sh`。
+- 交付「已发布」前必须确认两个域名都能打开同一版页面（`curl --compressed` 数卡片与周榜卡数）。部署失败若是 github-pages 产物报错，
   **不要点 Re-run failed jobs**（会在同一次运行里堆出第二个同名产物），直接新开一次运行。
 - 片库数据在 `~/.framepick/library/library.json`，是内容资产，不进仓库、不进产物。
 - 遇到测试失败或异常行为，先定位根因，再修改实现。
