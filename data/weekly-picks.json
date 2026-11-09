@@ -85,6 +85,14 @@
           "cover": "img/suisuipingan-640w.webp"
         },
         {
+          "id": "xuanze",
+          "title": "选择",
+          "releaseDate": "2026-11-08",
+          "source": "bilibili",
+          "runtime": "26:45",
+          "cover": "img/xuanze-640w.webp"
+        },
+        {
           "id": "meihua-zhiying",
           "title": "梅花之影",
           "releaseDate": "2026-11-07",
@@ -99,24 +107,16 @@
           "source": "bilibili",
           "runtime": "09:33",
           "cover": "img/yangqimudi-640w.webp"
-        },
-        {
-          "id": "claude-goodnight",
-          "title": "CLAUDE：好孩子，晚安",
-          "releaseDate": "2026-11-06",
-          "source": "bilibili",
-          "runtime": "15:39",
-          "cover": "img/claude-goodnight-640w.webp"
         }
       ],
       "supplement": [
         {
-          "id": "sairenzhige",
-          "title": "塞壬之歌：奥德修斯的抉择",
-          "releaseDate": "2026-09-03"
+          "id": "linghaojidilunxian",
+          "title": "零号：极地沦陷",
+          "releaseDate": "2026-10-03"
         }
       ],
-      "candidateCount": 20
+      "candidateCount": 21
     }
   ]
 }

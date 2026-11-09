@@ -148,6 +148,10 @@ class OssCovers(unittest.TestCase):
         self.context.route('https://accounts.test/**', lambda route: route.fulfill(
             status=200, content_type='application/json', headers={'Access-Control-Allow-Origin': '*'},
             body='{"signedIn":false,"account":null}'))
+        # review-config.js 会把 127.0.0.1 上的账号接口改写成同源 /api/framepick（本地预览走
+        # 后端 loopback），这里只是静态产物服务器，没有后端，所以同源也要给同样的桩。
+        self.context.route('**/api/framepick/**', lambda route: route.fulfill(
+            status=200, content_type='application/json', body='{"signedIn":false,"account":null}'))
         self.page.goto(self.base, wait_until='load')
         expect(self.page.locator('#accountEntry')).to_be_visible()
         self.page.locator('#accountEntry').click()

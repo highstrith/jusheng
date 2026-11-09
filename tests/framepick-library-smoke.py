@@ -209,10 +209,17 @@ class FramepickLibrary(unittest.TestCase):
     def test_site_mode_matches_configured_form(self):
         self.open()
         if SITE_MODE == 'ranking':
-            # 编选形态：影院、购票与账号入口整体隐藏，只留编选、片库与「我的」（观看记录）。
+            # 编选形态：影院与购票整体隐藏，只留编选、片库与「我的」（观看记录）。
             expect(self.page.locator('.intro-note')).to_contain_text('AI 短片编选')
-            for selector in ('#membership', '#cinema', '#cinemaPlan', '#prototypeBar', '#accountEntry'):
+            for selector in ('#membership', '#cinema', '#cinemaPlan', '#prototypeBar'):
                 expect(self.page.locator(selector)).to_be_hidden()
+            # 账号入口按「是否配置了账号服务」决定：本地预览与主站都配了（见 review-config.js），
+            # 编选形态下照样露出来，否则登录与观看记录同步就没有入口。未配置时才隐藏。
+            account_api = self.page.evaluate("() => String(window.FRAMEPICK_ACCOUNT_API || '').trim()")
+            if account_api:
+                expect(self.page.locator('#accountEntry')).to_be_visible()
+            else:
+                expect(self.page.locator('#accountEntry')).to_be_hidden()
             expect(self.page.locator('#meEntry')).to_be_visible()
             expect(self.page.locator('#meEntry')).to_have_attribute('href', 'me.html')
             nav = self.page.locator('nav[aria-label="站内导航"]')
