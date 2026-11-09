@@ -356,14 +356,19 @@ class FramepickOrdersOffline(BrowserBase):
         page.locator('#accountClose').click()
         page.locator('#purchaseClose').click()
 
-        # 免费浏览、原作入口与访客评价不受影响。
+        # 免费浏览、原作入口不受账号/订单未接入影响（验证点）。
         cards = page.locator('#filmGrid [data-film]')
         self.assertGreaterEqual(cards.count(), 3)
         expect(page.locator('#filmGrid .watch')).to_have_count(cards.count())
         page.locator('#filmGrid .details-button').first.click()
         expect(page.locator('#filmDialog')).to_be_visible()
-        page.locator('#reviewsTab').click()
-        expect(page.locator('#reviewForm')).to_be_visible()
+        # 未配置共享评价服务（与线上静态托管一致）时「站内评价」Tab 被隐藏；
+        # 本机 loopback 有服务时仍可点开。两种环境都不应破坏详情弹窗。
+        if page.locator('#reviewsTab').is_visible():
+            page.locator('#reviewsTab').click()
+            expect(page.locator('#reviewForm')).to_be_visible()
+        else:
+            expect(page.locator('#reviewsTab')).to_be_hidden()
 
 
 if __name__ == '__main__':

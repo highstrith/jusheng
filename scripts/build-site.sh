@@ -30,9 +30,10 @@ for file in *.js *.css; do
   cp "$file" "$OUT/"
 done
 
-# 给搜索引擎的基础文件。漏了这两个不会 404，但收录会一直起不来。
+# 给搜索引擎的基础文件。漏了不会报 404，但收录会一直起不来，所以缺了直接拦下。
 for file in robots.txt sitemap.xml; do
-  [ -f "$file" ] && cp "$file" "$OUT/"
+  [ -f "$file" ] || { echo "✗ 缺少 $file，站点收录会受影响" >&2; exit 1; }
+  cp "$file" "$OUT/"
 done
 
 rsync -a --exclude '/raw/' --exclude '._*' img/ "$OUT/img/"
@@ -58,6 +59,13 @@ for ref in refs:
         continue
     if not os.path.exists(os.path.join(out, ref)):
         missing.append(ref)
+# site-mode.js 在解析阶段条件注入的脚本不出现在 HTML 的字面引用里，单独核对。
+# 否则「形态开关改了、文件却没进产物」要等切到 cinema 才暴露成线上 404。
+mode = Path(out, 'site-mode.js').read_text(encoding='utf-8')
+for src in re.findall(r"optional\.push\('([^']+\.js)", mode):
+    name = src.split('?')[0]
+    if not os.path.exists(os.path.join(out, name)):
+        missing.append(name + ' (site-mode.js 可选脚本)')
 if missing:
     print('✗ 产物缺这些被页面引用的文件：', ', '.join(sorted(missing)[:10]), file=sys.stderr)
     sys.exit(1)

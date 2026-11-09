@@ -9,6 +9,10 @@
     if (api && !/^https?:$/.test(new URL(api, location.href).protocol)) api = '';
   } catch { api = ''; }
   api = api.replace(/\/+$/, '');
+  // 与账号入口同一套对称逻辑：只有真正配了共享评价服务（线上配置或本机
+  // loopback）才在 <html> 上打 data-reviews="enabled"，否则由 framepick.css
+  // 隐藏「站内评价」Tab——避免线上静态托管露出一个点开全是 disabled 的空壳。
+  if (api) document.documentElement.setAttribute('data-reviews', 'enabled');
   const offline = '当前页面未配置共享评价服务，暂不能查看或发布站内评价。';
   const tabs = [...document.querySelectorAll('.detail-tabs [role="tab"]')];
   const fields = $('#reviewFields');

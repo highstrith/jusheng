@@ -508,10 +508,10 @@ class FramepickReviews(unittest.TestCase):
     def test_offline_file_and_static_host_do_not_publish(self):
         requests = []
         self.page.on('request', lambda request: requests.append(request.url))
+        # 离线（file://）与静态托管（无评价服务）下，「站内评价」Tab 应被隐藏，
+        # 且绝不向 /api/framepick 发请求——评价不会在本地或静态托管上发布。
         self.page.goto((fp.SITE_ROOT / 'index.html').as_uri() + '?film=xianggu')
-        self.page.get_by_role('tab', name='站内评价', exact=True).click()
-        expect(self.page.locator('#reviewAvailability')).to_contain_text('未配置')
-        expect(self.page.locator('#reviewSubmit')).to_be_disabled()
+        expect(self.page.locator('#reviewsTab')).to_be_hidden()
         self.assertFalse(any('/api/framepick' in url for url in requests))
         def serve_static(route):
             # 静态托管的诚实模拟：缺文件要回 404，不能像真实主机那样摔异常。
@@ -522,9 +522,7 @@ class FramepickReviews(unittest.TestCase):
                 route.fulfill(status=404, body='Missing')
         self.page.route('http://framepick-static.test/**', serve_static)
         self.page.goto('http://framepick-static.test' + fp.url('?film=xianggu'))
-        self.page.get_by_role('tab', name='站内评价', exact=True).click()
-        expect(self.page.locator('#reviewAvailability')).to_contain_text('未配置')
-        expect(self.page.locator('#reviewSubmit')).to_be_disabled()
+        expect(self.page.locator('#reviewsTab')).to_be_hidden()
         self.assertFalse(any('/api/framepick' in url for url in requests))
 
     def test_mobile_tabs_keyboard_and_form_names(self):
