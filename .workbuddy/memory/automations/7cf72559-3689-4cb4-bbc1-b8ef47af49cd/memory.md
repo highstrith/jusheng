@@ -34,3 +34,11 @@
 - **新坑：本机代理 127.0.0.1:7897 端口活但 HTTPS 穿不过**，git push 报 SSL_ERROR_SYSCALL / Empty reply / 443 超时。解法：`env -u HTTP_PROXY -u HTTPS_PROXY -u ALL_PROXY git -c http.proxy= -c https.proxy= push origin main`；github.com 直连间歇性抽风，多试 1–3 次即可成功。先测 `curl -o /dev/null -w %{http_code}` 直连与走代理再判断，别急着怪沙箱。
 - ship 结果：76 测试 OK、产物 155、线上 55 卡片、两次部署（382df09 与 docs ec8c090）均 success。
 - 报告 `docs/framepick-discovery-20261103/runs/2026-11-08-1203.md`。
+
+## 2026-11-09 12:45 当日第二轮（发现 47 条，零上架＋部署事故修复）
+
+- 额度：哔哩哔哩凌晨首轮已 5/5 → 本轮 0 可上；够格清单 204 条全是 B 站；抖音 104 条候选仍无封面缓存；YouTube/X 4 条均不够格。零上架，按规则不跑 ship。
+- 发现：搜索 150 条＋频道 359 条 → 净入池 47，池 773→820。mid 重新从片库 29 位 B 站作者全量取得（view API 全成功）；频道扫描 28 位一次过、钟也棠 412 单独重跑成功。verify 全过。报告 `runs/2026-11-09-1255.md`。
+- **事故：git push 把用户本地未发布的 c8ec79d（首屏大图/视觉优化，提交说明明确写"仅本地未推送"）一并推上 main**，其 38 张 1280w 大图未传 OSS，部署 run 42564524876 在 Verify OSS images 失败。**教训：推送前必须 `git log origin/main..HEAD` 看清待推提交，不只推自己的 docs 提交。**
+- 修复：跑 `./scripts/upload-cover-assets.sh`（ossutil --update，本地凭据）补传全部图片资产并逐张核对 200；空提交 b150fa1 重新触发部署 → run 42564712698 success。双域名复核 9 卡片＋周榜 5 张、内容一致、1280w 大图 200。
+- 明日优先名单（有 AI 证据、非 IP 二创、非中间集，已过初筛）：女扮男装替哥从军（36:24）、智械之翎（16:45，导演署名科幻）、一个砖头的诞生（21:21，11.09 首发）、开坦克的女孩（15:14）、郡主无聊的日常（下）（33:42，注意是否系列完结篇）；萨尔浒题材（战争史）映射不进 genres 白名单按例跳过。
