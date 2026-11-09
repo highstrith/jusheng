@@ -2004,5 +2004,38 @@ window.FRAMEPICK_FILMS = [
     "relation": "",
     "intakeDate": "2026-11-09",
     "published": "2026-11-04"
+  },
+  {
+    "id": "weizhizhinuo",
+    "title": "未知之诺",
+    "kind": "科幻",
+    "genres": [
+      "scifi"
+    ],
+    "category": "short",
+    "source": "bilibili",
+    "sourceLabel": "哔哩哔哩",
+    "access": "free",
+    "badge": "免费精选",
+    "runtime": "5:55",
+    "author": "橘小桔",
+    "description": "发狂撞崖的巨兽被当成失心疯，只有巡护员许知微看出那是求救。极枢特遣队抢先控兽剖腹取核，她张开双臂挡在枪线前——金色神盾自甲缝亮起，一生一诺就此缔结；转身时，雾里浮出一双巨眼。",
+    "recommendation": "从一场「取核」行动切入的人兽契约故事，把信任写成一次可兑现的承诺。适合关注原创世界观、AI 动画质感与短篇节奏的观众。",
+    "cover": "img/weizhizhinuo-640w.webp",
+    "coverWidth": 640,
+    "coverHeight": 360,
+    "coverAlt": "《未知之诺》原片封面",
+    "coverNote": "原片封面",
+    "sourceUrl": "https://www.bilibili.com/video/BV1EwWh61Egp/",
+    "watchLabel": "前往哔哩哔哩",
+    "score": null,
+    "scoreText": "待评",
+    "completion": "standalone",
+    "statusLabel": "单部",
+    "episode": "",
+    "volume": "",
+    "relation": "",
+    "intakeDate": "2026-11-09",
+    "published": "2026-11-09"
   }
 ];
