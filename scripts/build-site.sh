@@ -46,7 +46,14 @@ out = sys.argv[1]
 html = ''.join(open(os.path.join(out, p), encoding='utf-8').read()
                for p in ('index.html', 'library.html', 'me.html'))
 missing = []
-for ref in set(re.findall(r'(?:src|href)="([^"?#:]+\.(?:js|css|webp|png|jpg|svg))"', html)):
+refs = set(re.findall(r'(?:src|href)="([^"?#:]+\.(?:js|css|webp|png|jpg|svg))"', html))
+# srcset 里的每一档也要在产物里，否则高分屏拿到的是一张 404。
+for attr in re.findall(r'srcset="([^"]+)"', html):
+    for part in attr.split(','):
+        ref = part.strip().split(' ')[0]
+        if ref and not ref.startswith(('http', '//', 'data:')):
+            refs.add(ref)
+for ref in refs:
     if ref.startswith(('http', '//')):
         continue
     if not os.path.exists(os.path.join(out, ref)):
@@ -60,12 +67,14 @@ print(f'  产物 {sum(len(f) for _, _, f in os.walk(out))} 个文件，页面引
 base = 'https://highstrith-assets.oss-cn-hangzhou.aliyuncs.com/reel/img/'
 images = {p.name for p in Path(out, 'img').iterdir()
           if p.is_file() and not p.name.startswith('.')}
-reference = re.compile(r'''(["'])(?:https://highstrith\.github\.io/jusheng/)?img/([A-Za-z0-9._-]+)\1''')
+reference = re.compile(
+    r'(?<![\w./-])(?:https://highstrith\.github\.io/jusheng/)?img/([A-Za-z0-9._-]+\.(?:webp|png|jpg|jpeg|svg))')
 for file in Path(out).iterdir():
     if file.name.startswith('.') or file.suffix not in ('.html', '.js', '.css'):
         continue
     source = file.read_text(encoding='utf-8')
-    result = reference.sub(lambda m: m[1] + base + m[2] + m[1] if m[2] in images else m[0], source)
+    # 不锚引号：srcset 里的 `img/x-1280w.webp 1280w` 不带引号，锚了就漏改。
+    result = reference.sub(lambda m: base + m.group(1) if m.group(1) in images else m.group(0), source)
     if file.suffix == '.html':
         config = ('<link rel="preconnect" href="https://highstrith-assets.oss-cn-hangzhou.aliyuncs.com">'
                   '<script>window.FRAMEPICK_IMAGE_BASE="' + base + '";</script>')

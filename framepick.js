@@ -33,7 +33,10 @@
   const toFilm = (raw) => {
     if (!raw || !raw.id) return null;
     const image = new Image();
-    image.src = raw.cover;
+    // 不在这里赋 src：`new Image().src = …` 会立刻发一次请求，而详情弹窗可能永远不打开。
+    // 首页主推那六部都走这条路，等于白白多下六张缩略图。真正的地址先挂 data，
+    // 展开详情时由 coverOf() 取出来用。
+    image.dataset.cover = raw.cover;
     image.alt = raw.coverAlt || raw.title || '';
     image.setAttribute('width', raw.coverWidth || '');
     image.setAttribute('height', raw.coverHeight || '');
@@ -47,6 +50,8 @@
       volume: raw.volume || '', relation: raw.relation || '', image, link: raw.sourceUrl, search: ''
     };
   };
+  // 栅格里的 img 有 src，详情表里的是延迟地址（data-cover），两种都认。
+  const coverOf = (image) => image.dataset.cover || image.currentSrc || image.src;
   for (const raw of (window.FRAMEPICK_DETAIL_EXTRAS || [])) {
     const film = toFilm(raw);
     if (film && !byId.has(film.id) && !extras.has(film.id)) extras.set(film.id, film);
@@ -412,13 +417,24 @@
     // 详情图优先换 1280w 大图（列表缩略图只有 640w，放大发虚）；没有大图的片就留缩略图。
     // 预载成功才换 src，避免加载期间闪空白；缩略图的宽高属性让浏览器按原比例占位，不跳版。
     const detailImage = $('#detailImage');
-    detailImage.src = film.image.src;
+    // 左栏封面按原比例完整显示，右栏更高时下面会空出一块。拿同一张图放大模糊垫在背后，
+    // 那块就不再是死黑的空白（裁成 object-fit:cover 会把海报两侧的片名字吃掉，不裁）。
+    const detailCover = detailImage.closest('.detail-cover');
+    const setCoverArt = (url) => {
+      if (detailCover && url) detailCover.style.setProperty('--cover', `url("${url}")`);
+    };
+    detailImage.src = coverOf(film.image);
+    setCoverArt(detailImage.src);
     detailImage.alt = film.image.alt;
     detailImage.setAttribute('width', film.image.getAttribute('width') || '');
     detailImage.setAttribute('height', film.image.getAttribute('height') || '');
     const large = new Image();
-    large.onload = () => { if (currentFilm === film) detailImage.src = large.src; };
-    large.src = film.image.src.replace('-640w.webp', '-1280w.webp');
+    large.onload = () => {
+      if (currentFilm !== film) return;
+      detailImage.src = large.src;
+      setCoverArt(large.src);
+    };
+    large.src = coverOf(film.image).replace('-640w.webp', '-1280w.webp');
     const watch = $('#detailWatch');
     watch.href = film.link;
     watch.dataset.outboundFilm = film.id;

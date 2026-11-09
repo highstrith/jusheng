@@ -13,15 +13,19 @@
 .pick-rank { color:var(--gold);font-weight:650;font-variant-numeric:tabular-nums;letter-spacing:.02em }
 .pick-genre::before,.pick-runtime::before { content:"·";margin-right:8px;color:var(--muted) }
 .pick-runtime { font-variant-numeric:tabular-nums }
-.pick-link h3 { margin-top:5px;font:400 23px/1.45 var(--serif);overflow-wrap:anywhere }
+/* 片名一行还是两行，五张卡的首发日期与理由段就会错开三十多像素——一排看过去像没对齐。
+   这里给标题留足两行的高度，下面几行就落在同一条水平线上。
+   不裁行（`line-clamp`）：英文长片名在窄屏要三行，裁了就成了「Bounty Hunters: The…」，
+   片名是内容，宁可那一张卡自己矮一截。 */
+.pick-link h3 { margin-top:5px;font:400 23px/1.45 var(--serif);overflow-wrap:anywhere;min-height:2.9em }
 .pick-link:hover h3 { color:var(--gold) }
 .pick-reason { margin-top:10px;font-size:12px;line-height:1.9;color:var(--body);overflow-wrap:anywhere }
 .picks-note { margin-top:25px;padding-top:15px;border-top:1px solid var(--line);color:var(--muted);font-size:11px;line-height:1.8 }
 /* 周榜：期次说明、每部首发日期、无新作时的诚实空状态。 */
 .picks-caption { margin:-12px 0 22px;color:var(--muted);font-size:12px;line-height:1.8 }
-.pick-release { margin-top:9px;color:var(--gold);font-size:10px;letter-spacing:.02em;font-variant-numeric:tabular-nums }
+.pick-release { margin-top:9px;color:var(--gold);font-size:11px;letter-spacing:.02em;font-variant-numeric:tabular-nums }
 /* 补选：不是为了凑数好看，是为了让标题下铺满五张。日期照实写，另挂一枚小标签。 */
-.pick-bonus { display:inline-block;margin-left:7px;padding:0 5px;border:1px solid var(--line);border-radius:999px;color:var(--muted);font-size:10px;line-height:15px;letter-spacing:.04em;vertical-align:1px }
+.pick-bonus { display:inline-block;margin-left:7px;padding:0 5px;border:1px solid var(--line);border-radius:999px;color:var(--muted);font-size:11px;line-height:15px;letter-spacing:.04em;vertical-align:1px }
 .pick-card.is-bonus .pick-rank { color:var(--muted);font-weight:400 }
 /* 占位符「＋」不是数字，后面再跟一个「·」就成了「＋ · 动作」，像排版事故。 */
 .pick-card.is-bonus .pick-genre::before { content:none }
@@ -36,9 +40,9 @@
   .editorial-picks .rankings-browse { display:none }
   .picks-edition { gap:7px }
   .picks-edition-range { gap:6px;font-size:25px }
-  .picks-edition-label { font-size:10px }
+  .picks-edition-label { font-size:11px }
   .picks-grid { grid-template-columns:repeat(2,minmax(0,1fr));gap:25px 16px }
-  .pick-meta { margin-top:11px;gap:6px;font-size:10px }
+  .pick-meta { margin-top:11px;gap:6px;font-size:11px }
   .pick-genre::before,.pick-runtime::before { margin-right:6px }
   .pick-link h3 { font-size:21px }
   .pick-reason { margin-top:7px }

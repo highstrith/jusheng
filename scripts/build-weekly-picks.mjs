@@ -83,10 +83,18 @@ function reasonOf(film) {
   if (!text) return '';
   const stop = text.indexOf('。');
   let out = stop >= 0 ? text.slice(0, stop + 1) : text;
-  if ([...out].length > 54) {
-    const cut = [...out].slice(0, 54).join('');
-    const boundary = Math.max(cut.lastIndexOf('，'), cut.lastIndexOf('、'), cut.lastIndexOf('；'));
-    out = (boundary > 30 ? cut.slice(0, boundary) : cut) + '…';
+  const LIMIT = 54;
+  if ([...out].length > LIMIT) {
+    const cut = [...out].slice(0, LIMIT).join('');
+    // 先找句读；整句没有逗号顿号时退到最近的空格，别把「AI 电影」切成「电…」。
+    // 门槛 24：只要句读处已铺到 44% 以上就收在那儿，宁短一截也别断在半个词上。
+    const clause = Math.max(
+      cut.lastIndexOf('，'), cut.lastIndexOf('、'),
+      cut.lastIndexOf('；'), cut.lastIndexOf('：'),
+    );
+    const space = cut.lastIndexOf(' ');
+    const at = clause > 24 ? clause : (space > 24 ? space : -1);
+    out = (at > 0 ? cut.slice(0, at) : cut).replace(/[，、；：\s]+$/, '') + '…';
   }
   return out;
 }

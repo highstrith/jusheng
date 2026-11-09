@@ -32,6 +32,9 @@ const rawDir = path.join(root, 'img', 'raw');
 const coversDoc = path.join(root, 'docs', 'framepick-cover-20261103', 'douyin-covers.json');
 const UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126 Safari/537.36';
 const FALLBACK_FFMPEG = '/Users/linjunjie/Downloads/type 助手/saydra/node_modules/ffmpeg-static/ffmpeg';
+// 首屏那张大图要的宽度；低于 900 的母版就别另存一档了，省得产出一堆没用的近似尺寸。
+const LARGE_WIDTH = 1280;
+const LARGE_MIN_WIDTH = 900;
 
 function resolveFfmpeg() {
   const wanted = arg('--ffmpeg') || 'ffmpeg';
@@ -130,6 +133,17 @@ for (const film of films) {
     const webpFile = path.join(root, 'img', `${film.id}-640w.webp`);
     if (!dryRun) convertToWebp(ffmpeg, rawFile, webpFile, targetWidth, targetHeight);
 
+    // 大图一档：首屏主推在桌面上铺到 800 多像素宽，640w 放大看是糊的。
+    // 母版够大就再出一张，宽度取 min(1280, 母版宽度)——不放大凑数，
+    // 文件名带真实宽度（`-1152w.webp` 就是 1152），生成器按文件名写 srcset。
+    const largeWidth = Math.min(LARGE_WIDTH, size.width);
+    let largeFile = '';
+    if (largeWidth >= LARGE_MIN_WIDTH) {
+      const largeHeight = Math.max(2, Math.round((largeWidth * size.height) / size.width / 2) * 2);
+      largeFile = path.join(root, 'img', `${film.id}-${largeWidth}w.webp`);
+      if (!dryRun) convertToWebp(ffmpeg, rawFile, largeFile, largeWidth, largeHeight);
+    }
+
     const patch = {
       sourceCover,
       cover: `img/${film.id}-640w.webp`,
@@ -139,14 +153,14 @@ for (const film of films) {
       coverHeight: targetHeight,
     };
     if (!dryRun) store.updateFilm(film.id, patch, { actor: 'cover-build' });
-    done.push({ id: film.id, source: film.source, ...size, targetHeight });
+    done.push({ id: film.id, source: film.source, ...size, targetHeight, large: largeFile ? largeWidth : 0 });
   } catch (error) {
     failed.push({ id: film.id, reason: error.message });
   }
 }
 
 console.log(`\n封面${dryRun ? '（dry-run，未写库）' : '已更新'}：成功 ${done.length} · 失败 ${failed.length}`);
-for (const row of done) console.log(`  ✓ ${row.id}（${row.source}）${row.width}x${row.height} → 640x${row.targetHeight}`);
+for (const row of done) console.log(`  ✓ ${row.id}（${row.source}）${row.width}x${row.height} → 640x${row.targetHeight}${row.large ? ` + ${row.large}w` : ''}`);
 for (const row of failed) console.log(`  ✗ ${row.id}：${row.reason}`);
 if (failed.length && !dryRun) console.log('\n失败的条目保持原封面不变，可修复后重跑。');
 if (dryRun) console.log('\n去掉 --dry-run 执行下载、转换与写库。');

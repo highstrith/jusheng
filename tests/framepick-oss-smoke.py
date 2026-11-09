@@ -128,9 +128,16 @@ class OssCovers(unittest.TestCase):
         self.assertTrue(all(url.startswith(OSS) for url in self.requests), self.requests)
 
     def test_detail_prefers_the_large_cover_when_one_exists(self):
-        # 只有少数作品出过 1280w 大图，其余用 640w 兜底；两条路径都要走 OSS。
-        large = sorted(Path(p).name[:-len('-1280w.webp')] for p in (ROOT / 'img').glob('*-1280w.webp'))
-        self.assertTrue(large, 'img/ 里没有 1280w 封面，无法验证大图优先')
+        # 出过大图（母版够大）的作品才走这条路，其余用 640w 兜底；两条路径都要走 OSS。
+        # 注意「盘上有 1280w」不等于「这部还在架上」：下架或换图的旧文件可能留在 img/ 里，
+        # 拿它当深链会打开空详情，所以取「已上架 ∩ 有大图」的交集。
+        published = set(re.findall(r'"id": "([^"]+)"', (ROOT / 'public' / 'films-data.js').read_text(encoding='utf-8')))
+        # glob 会把 exFAT 的 `._xxx` 伴生文件也算进来，先剔掉再和已上架名单取交集。
+        large = sorted(name for name in
+            (p.name[:-len('-1280w.webp')] for p in (ROOT / 'img').glob('*-1280w.webp')
+             if not p.name.startswith('._'))
+            if name in published)
+        self.assertTrue(large, '已上架作品里没有 1280w 封面，无法验证大图优先')
         film_id = large[0]
         self.page.goto(self.base + '?film=' + film_id, wait_until='load')
         expect(self.page.locator('#detailImage')).to_have_attribute('src', OSS + f'{film_id}-1280w.webp')

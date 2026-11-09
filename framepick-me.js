@@ -52,14 +52,14 @@
     const note = $('#meStorageNote');
     const viewing = window.FramepickViewing;
     if (!line) return;
-    line.textContent = viewing.online()
-      ? '账号服务已连接；登录后观看记录随账号走，换设备登录即可恢复。'
-      : '账号服务未在此部署：当前记录只保存在这台浏览器。';
-    if (note) note.textContent = viewing.online() ? '本浏览器或你的账号' : '保存在此浏览器';
+    const guest = '未登录：收藏与观看历史现在就能用，默认只保存在这台浏览器。账号同步开放后，观看历史可跨设备恢复；收藏暂不随账号同步。';
+    const offline = '未登录，且账号服务未在此部署：收藏与观看历史只保存在这台浏览器。';
+    line.textContent = viewing.online() ? guest : offline;
+    if (note) note.textContent = viewing.online() ? '观看记录可同步；收藏仅本浏览器' : '保存在此浏览器';
     window.addEventListener('framepick:account', ({ detail }) => {
       line.textContent = detail?.signedIn
-        ? `已登录：${detail.account?.nickname || detail.account?.email}。观看记录保存在账号下，换设备可恢复。`
-        : (viewing.online() ? '未登录：记录保存在此浏览器，登录后合并进账号。' : '账号服务未在此部署：当前记录只保存在这台浏览器。');
+        ? `已登录：${detail.account?.nickname || detail.account?.email}。观看历史保存在账号下，换设备可恢复；收藏仍只在这台浏览器。`
+        : (viewing.online() ? guest : offline);
     });
   }
 

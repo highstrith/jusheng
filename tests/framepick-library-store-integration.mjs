@@ -45,6 +45,23 @@ function copySiteFiles(site) {
     fs.mkdirSync(path.join(site, 'data'), { recursive: true });
     fs.copyFileSync(from, path.join(site, 'data', path.basename(file)));
   }
+  // 首屏图像的 srcset 是按 img/ 里实际存在的档位写的（640w / 1280w…），
+  // 临时站点没有图就会少写 srcset，逐字节比对必然不等。只拷页面当前引用的
+  // 那十几张（整目录 cp 会撞沙箱批量复制策略），重新生成的 srcset 才对得上。
+  const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+  const refs = new Set();
+  for (const attr of html.matchAll(/(?:src|srcset)="([^"]+)"/g)) {
+    for (const part of attr[1].split(',')) {
+      const ref = part.trim().split(' ')[0];
+      if (/^img\/[A-Za-z0-9._-]+\.(?:webp|png|jpg)$/.test(ref)) refs.add(ref);
+    }
+  }
+  for (const ref of refs) {
+    const from = path.join(root, ref);
+    if (!fs.existsSync(from)) continue;
+    fs.mkdirSync(path.join(site, path.dirname(ref)), { recursive: true });
+    fs.copyFileSync(from, path.join(site, ref));
+  }
 }
 
 test('films start as drafts and only published films reach the public list', async (t) => {

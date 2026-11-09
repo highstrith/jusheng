@@ -47,6 +47,20 @@
     } catch { return new Set(); }
   })();
 
+  // 片库是 60 部的主阵地，收藏入口不能只放在首页九部里。
+  // 在收藏视图里反转成「看全部作品」，省得读者再找返回路径。
+  function syncSavedEntry() {
+    const entry = document.getElementById('libSavedEntry');
+    if (!entry) return;
+    if (state.saved) {
+      entry.href = 'library.html';
+      entry.textContent = '看全部作品';
+    } else {
+      entry.href = 'library.html?saved=1';
+      entry.innerHTML = `我的收藏 <span id="libSavedCount">${saved.size}</span>`;
+    }
+  }
+
   const esc = (value) => String(value ?? '')
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
@@ -103,9 +117,9 @@
     const titleId = `libTitle${state.page}-${index}`;
     const status = film.statusLabel
       ? `<span class="status-tag" data-completion="${esc(film.completion)}">${esc(film.statusLabel)}</span>` : '';
-    return `<article class="card" data-film="${esc(film.id)}" aria-labelledby="${titleId}">
+    return `<article class="card" data-film="${esc(film.id)}" data-access="${esc(film.access || '')}" aria-labelledby="${titleId}">
         <a class="card-media" href="${esc(film.sourceUrl)}" target="_blank" rel="noopener noreferrer" aria-label="前往${esc(film.sourceLabel)}观看《${esc(film.title)}》"><img src="${esc(film.cover)}" width="${film.coverWidth}" height="${film.coverHeight}" alt="${esc(film.coverAlt)}" loading="lazy" decoding="async"><span class="access-badge">${esc(film.badge)}</span></a>
-        <div class="card-body"><div class="card-topline"><span class="kind">${esc(film.kind)}</span><span class="card-runtime">${esc(film.runtime)}</span>${status}<span class="score" aria-label="编辑评分：${esc(film.scoreText)}">${esc(film.scoreText)}</span></div><h3 id="${titleId}">${esc(film.title)}</h3><p class="film-author"><span class="author-name">${esc(film.author)}</span><span class="source-name">${esc(film.sourceLabel)}</span></p><p class="desc">${esc(film.description)}</p><div class="card-actions"><a class="watch" href="${esc(film.sourceUrl)}" target="_blank" rel="noopener noreferrer">${esc(film.watchLabel)}<svg aria-hidden="true"><use href="#arrow"/></svg></a></div></div>
+        <div class="card-body"><div class="card-topline"><span class="kind">${esc(film.kind)}</span><span class="card-runtime">${esc(film.runtime)}</span>${status}<span class="score" aria-label="编辑评分：${esc(film.scoreText)}">${esc(film.scoreText)}</span></div><h3 id="${titleId}">${esc(film.title)}</h3><p class="film-author"><span class="author-name">${esc(film.author)}</span><span class="source-name">${esc(film.sourceLabel)}</span></p><p class="desc">${esc(film.description)}</p><div class="card-actions"><a class="watch" data-outbound-film="${esc(film.id)}" href="${esc(film.sourceUrl)}" target="_blank" rel="noopener noreferrer">${esc(film.watchLabel)}<svg aria-hidden="true"><use href="#arrow"/></svg></a><button class="save-button" type="button" data-toggle-save="${esc(film.id)}" aria-label="${saved.has(film.id) ? '取消收藏' : '收藏'}《${esc(film.title)}》" aria-pressed="${saved.has(film.id)}"><svg aria-hidden="true"><use href="#bookmark"/></svg></button></div></div>
       </article>`;
   }
 
@@ -179,9 +193,30 @@
         ? '收藏的作品都不符合当前条件，换个筛选项，或看全部作品。'
         : '这台浏览器还没有收藏。在首页或片库的作品卡片上点书签，收藏会出现在这里。')
       : '没有匹配的作品，换个条件试试。';
+    syncSavedEntry();
   }
 
   function bind() {
+    grid.addEventListener('click', (event) => {
+      const button = event.target.closest('[data-toggle-save]');
+      if (!button) return;
+      const id = button.dataset.toggleSave;
+      if (saved.has(id)) saved.delete(id); else saved.add(id);
+      // 隐私模式下 localStorage 会抛错，此时只保留本次会话的收藏，不让点击失效。
+      try { localStorage.setItem(SAVED_KEY, JSON.stringify([...saved])); } catch { /* ignore */ }
+      render();
+    });
+    // 片库是主要浏览入口，跳原平台也要记进观看历史，否则「我的记录」永远是空的。
+    grid.addEventListener('click', (event) => {
+      const link = event.target.closest('.card-actions .watch');
+      const id = link && link.dataset.outboundFilm;
+      const film = id && films.find((entry) => entry.id === id);
+      if (!film || !window.FramepickViewing) return;
+      window.FramepickViewing.record(id, 'watch', {
+        title: film.title, poster: film.cover, author: film.author,
+        kind: film.kind, source: film.source,
+      });
+    });
     const search = document.getElementById('libSearch');
     search.addEventListener('input', () => { state.q = search.value; state.page = 1; render(); });
     for (const [id, key] of [['libGenre', 'genre'], ['libSource', 'source'], ['libSort', 'sort']]) {

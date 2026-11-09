@@ -206,12 +206,31 @@ function pickFeature(list, newestFirst) {
   return null;
 }
 // 简介第一句，超长截断加省略号：首屏位置窄，整段会顶掉按钮。
+//
+// 只按「第一个句号/问号」切有个坑：句读常常落在引号里面，硬切会留下
+// 「…原页简介只留了两句设问：「虚神也会保护人类吗？」这种半截引号，
+// 读起来像断行事故。所以切完还要检查引号是否闭合，没闭合就退到开引号之前。
+const QUOTES = [['「', '」'], ['『', '』'], ['“', '”'], ['（', '）']];
+const OPEN_QUOTES = QUOTES.map(([open]) => open);
+const unbalanced = (text) => QUOTES.some(([open, close]) =>
+  text.split(open).length !== text.split(close).length);
+const tidyClause = (text) => text.replace(/[，、；：,;\s…]+$/, '').trim();
+// 截断点落在开引号之后，就退到这个引号前面收尾，别把半句话交出去。
+function trimToClause(text) {
+  if (!unbalanced(text)) return text;
+  let cut = -1;
+  for (const open of OPEN_QUOTES) cut = Math.max(cut, text.lastIndexOf(open));
+  return cut > 0 ? tidyClause(text.slice(0, cut)) : tidyClause(text);
+}
 function firstSentence(text, limit = 46) {
   const clean = String(text || '').replace(/\s+/g, ' ').trim();
   if (!clean) return '';
   const match = clean.match(/^[^。！？!?]*[。！？!?]/);
-  const sentence = (match ? match[0] : clean).trim();
-  return sentence.length > limit ? `${sentence.slice(0, limit)}…` : sentence;
+  let sentence = (match ? match[0] : clean).trim();
+  if (unbalanced(sentence)) sentence = `${trimToClause(sentence)}…`;
+  if (sentence.length <= limit) return sentence;
+  const clipped = trimToClause(sentence.slice(0, limit));
+  return `${clipped}…`;
 }
 // 首屏轮播：第一张是主推，其余从「没进首页九张、也不在本周榜单」的作品里顺补，最多六张。
 // 这样首屏不跟下面的榜单／栅格重复，片库长尾也有露脸机会；六张一轮约 42 秒，够看完两张再翻。
@@ -221,6 +240,32 @@ function heroSlides(hero, pool) {
   const taken = new Set([...whileHome.map((film) => film.id), ...picksShown, hero.film.id]);
   const extras = pool.filter((film) => !taken.has(film.id)).slice(0, HERO_SLIDES - 1);
   return [hero, ...extras.map((film) => ({ film, label: '同样值得看' }))];
+}
+// 封面的大图档位：`img/<id>-640w.webp` 旁边可能还有 `-1280w.webp`（母版够大时
+// cover-build 顺手出的）。首屏大图在桌面上铺到 823px，640w 放大看是糊的，
+// 所以存在更大一档就写成 srcset 交给浏览器按 DPR 挑；没有就退回单张。
+const coverVariants = new Map();
+function coverVariantsOf(film) {
+  if (coverVariants.has(film.id)) return coverVariants.get(film.id);
+  const fallback = [{ file: film.cover, width: Number(film.coverWidth) || 640 }];
+  const base = path.basename(String(film.cover || ''));
+  const match = base.match(/^(.*)-(\d+)w\.webp$/);
+  if (!match) {
+    coverVariants.set(film.id, fallback);
+    return fallback;
+  }
+  let names = [];
+  try { names = fs.readdirSync(path.join(siteDir, 'img')); } catch { names = []; }
+  const list = names
+    .map((name) => {
+      const hit = name.match(/^(.*)-(\d+)w\.webp$/);
+      return hit && hit[1] === match[1] ? { file: `img/${name}`, width: Number(hit[2]) } : null;
+    })
+    .filter((entry) => entry && entry.width >= 640)
+    .sort((a, b) => a.width - b.width);
+  const resolved = list.length ? list : fallback;
+  coverVariants.set(film.id, resolved);
+  return resolved;
 }
 function heroSlide({ film, label }, index, total) {
   const active = index === 0;
@@ -245,9 +290,13 @@ function heroSlide({ film, label }, index, total) {
   const rest = active ? '' : ' inert aria-hidden="true"';
   // 首张是 LCP 元素，优先加载；其余等切换前由脚本预热，首屏体积不为没露脸的封面买单。
   const load = active ? 'fetchpriority="high"' : 'loading="lazy"';
+  const variants = coverVariantsOf(film);
+  const srcset = variants.length > 1
+    ? ` srcset="${variants.map((entry) => `${escapeHtml(entry.file)} ${entry.width}w`).join(', ')}"`
+    : '';
   return `<div class="hero-slide${active ? ' is-active' : ''}" role="group" aria-roledescription="幻灯片" aria-label="第 ${index + 1} 部，共 ${total} 部：${escapeHtml(film.title)}"${rest}>
       <a class="feature-media" href="${escapeHtml(film.sourceUrl)}" data-open-film="${escapeHtml(film.id)}" target="_blank" rel="noopener noreferrer" aria-label="查看《${escapeHtml(film.title)}》">
-        <img src="${escapeHtml(film.cover)}" sizes="(max-width:760px) calc(100vw - 36px), 65vw" width="${film.coverWidth}" height="${film.coverHeight}" alt="${escapeHtml(alt)}" ${load} decoding="async">
+        <img src="${escapeHtml(film.cover)}"${srcset} sizes="(max-width:760px) calc(100vw - 36px), 65vw" width="${film.coverWidth}" height="${film.coverHeight}" alt="${escapeHtml(alt)}" ${load} decoding="async">
         <span class="feature-label">${escapeHtml(label)}</span>${note}
       </a>
       <div class="feature-copy"><div class="film-tags">${tags}</div><h2>${escapeHtml(film.title)}</h2><p>${escapeHtml(line)}</p><div class="feature-meta">${meta}</div><a class="watch" data-outbound-film="${escapeHtml(film.id)}" href="${escapeHtml(film.sourceUrl)}" target="_blank" rel="noopener noreferrer">前往${escapeHtml(sourceLabel)}观看<svg aria-hidden="true"><use href="#arrow"/></svg></a><span class="watch-note">免费原片 · 在原平台播放</span></div>
