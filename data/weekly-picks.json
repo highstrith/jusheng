@@ -93,20 +93,20 @@
           "cover": "img/xuanze-640w.webp"
         },
         {
-          "id": "meihua-zhiying",
-          "title": "梅花之影",
-          "releaseDate": "2026-11-07",
+          "id": "guilai",
+          "title": "归来",
+          "releaseDate": "2026-11-08",
           "source": "bilibili",
-          "runtime": "24:44",
-          "cover": "img/meihua-zhiying-640w.webp"
+          "runtime": "13:55",
+          "cover": "img/guilai-640w.webp"
         },
         {
-          "id": "yangqimudi",
-          "title": "氧气墓地",
-          "releaseDate": "2026-11-06",
+          "id": "renleizuihoudetianti",
+          "title": "人类最后的天梯",
+          "releaseDate": "2026-11-08",
           "source": "bilibili",
-          "runtime": "09:33",
-          "cover": "img/yangqimudi-640w.webp"
+          "runtime": "13:45",
+          "cover": "img/renleizuihoudetianti-640w.webp"
         }
       ],
       "supplement": [
@@ -116,7 +116,7 @@
           "releaseDate": "2026-10-03"
         }
       ],
-      "candidateCount": 21
+      "candidateCount": 24
     }
   ]
 }
