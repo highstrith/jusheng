@@ -1,5 +1,16 @@
 # 自动上新任务执行记录（7cf72559）
 
+## 2026-11-10 00:45 当日首轮（发现＋上架 5 部）
+
+- 额度：新自然日 0 已上，哔哩哔哩 5/5 用满；抖音 5/5 可用但候选仍无缓存封面 → 留人工。
+- 发现：搜索 150 条、30 位作者频道 378 条 → 净入池 29（池 820→849）。mid 仍用 view API 取 `owner.mid`（30 位全成功）。channel 首轮 25/30 成功，5 条 412 单独重跑即过。verify 770 条、17 条失效。报告 `runs/2026-11-10-0102.md`。
+- 上架 5 部（61→66）：给予你完整的一生、途中、零号：极地沦陷、最后一翼、选择。载荷带 `completion: standalone`，无返工。
+- **重要编辑判定**：channel 来源的候选备注一律写「原页未出现 AI 表述」，实为频道接口不返回简介导致的假阴性。判定要看 view API 的 `desc`＋tag 接口 `tag/archive/tags`：途中（desc 写「画面与旁白使用 AI 辅助制作」）与零号（desc「原创AI科幻短片」＋AI原创/AIGC 标签）据此通过；陰司管理局、噬林、归栖、为了再见女儿无任何 AI 表述，按硬规则跳过。CCTV 转载的《一个砖头的诞生》（desc 挂 v.cctv.com 链接）、desc 写「来自网络，侵删」的《智械之翎》按非原创跳过。
+- **测试坑：159abf7（11-09 接入香港账号服务）后两条用例失效**，ship 会被拦住：`test_site_mode_matches_configured_form` 仍断言编选形态隐藏 `#accountEntry`，而 review-config 已在 127.0.0.1 配置同源账号接口 → 改为按 `FRAMEPICK_ACCOUNT_API` 是否配置断言；`test_ranking_site_exposes_login_when_an_account_service_is_configured` 注入的 accounts.test 被 review-config 覆盖，补 `**/api/framepick/**` 同源桩。已随 9e7946e 提交。
+- **端口坑：3200 被 Loomy.app（serve.js）长期占用**，`run-tests.sh` 起服务 EADDRINUSE 后静默继续，测试打到外部进程。解法：`PORT=3311 ./scripts/ship.sh ...`。
+- ship 通过：85 测试 OK（跳过 19）、产物 269、双域名 9 卡片＋周榜 5 张（新增《选择》在榜、零号补选）、线上片库 66、5 张新 1280w 封面 OSS 全 200。docs 提交 50fa432 也触发部署且 success。
+- 下一轮注意：抖音仍卡在封面缓存（`douyin-covers.json` 只有已上架作品的键），要动抖音必须先跑封面脚本。
+
 ## 2026-11-09 00:30 当日首轮（发现＋上架 5 部）
 
 - 额度：新自然日 0 已上，哔哩哔哩 5/5 用满；抖音无缓存封面留人工。
