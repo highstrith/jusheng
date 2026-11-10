@@ -436,3 +436,26 @@ html:not([data-reviews="enabled"]) #reviewsTab { display:none !important }
   /* 320px 上第二行会剩「我的 + 收藏」，靠右收齐，别吊在左边。 */
   .me-entry { margin-left:auto }
 }
+
+/* ── 小按钮交互反馈统一（2026-11-09）────────────────────────────
+   原来一批纯文字按钮没有任何 hover 反馈（登录、收藏、详情、分类、链接…），
+   全站也从来没有 :active（按下）反馈；加上早先为去原生高亮设的
+   -webkit-tap-highlight-color:transparent，触屏点下去毫无动静，像没响应。
+   这里统一补齐：hover 提亮、按下降透明，过渡时长一致，与已有的主按钮响应合拍。 */
+.account-entry,.saved-toggle,.details-button,.category-tabs button,
+.link-button,.review-edit,.review-retry,.guest-how,.dialog-close,
+.hide-watched-toggle,.me-entry,.me-links a,.foot a,.filter-row select,
+.sort-control select,.pager button,.save-button,.watch {
+  transition:color .16s ease,background-color .16s ease,border-color .16s ease,opacity .16s ease;
+}
+button:not(:disabled):active,a[href]:active { opacity:.65 }
+/* 以下这些按钮此前完全没有 hover 反馈 */
+.account-entry:hover { background:color-mix(in srgb,var(--surface) 70%,transparent) }
+.saved-toggle:hover { color:var(--text) }
+.details-button:hover { color:var(--gold) }
+.category-tabs button:hover { color:var(--text) }
+.link-button:hover,.review-edit:hover,.review-retry:hover,.guest-how:hover,
+.me-links a:hover,.foot a:hover,.filter-row select:hover,.sort-control select:hover { color:var(--text) }
+.dialog-close:hover { background:var(--raised);color:var(--text) }
+.hide-watched-toggle:hover { color:var(--text);border-color:var(--line-strong) }
+@media (prefers-reduced-motion:reduce) { button:active,a[href]:active { opacity:1 } }
