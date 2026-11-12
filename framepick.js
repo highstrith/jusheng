@@ -21,7 +21,7 @@
       // 连载状态：卡片只放一个小标签，体量／续集关系是隐藏文本，详情弹窗才展示。
       completion: card.dataset.completion || '', statusLabel: text('.status-tag'),
       volume: text('.volume'), relation: text('.relation'),
-      image: card.querySelector('img'), link: card.querySelector('.watch').href,
+      image: card.querySelector('img'), link: card.querySelector('.watch').href, runtime: text('.card-runtime'),
       search: card.textContent.toLocaleLowerCase()
     };
   });
@@ -47,7 +47,7 @@
       published: raw.published || '', title: raw.title || '', author: raw.author || '',
       kind: raw.kind || '', description: raw.description || '', reason: raw.recommendation || '',
       episode: raw.episode || '', completion: raw.completion || '', statusLabel: raw.statusLabel || '',
-      volume: raw.volume || '', relation: raw.relation || '', image, link: raw.sourceUrl, search: ''
+      volume: raw.volume || '', relation: raw.relation || '', image, link: raw.sourceUrl, runtime: raw.runtime || '', search: ''
     };
   };
   // 栅格里的 img 有 src，详情表里的是延迟地址（data-cover），两种都认。
@@ -414,6 +414,23 @@
     }
     $('#detailDescription').textContent = film.description;
     $('#detailReason').textContent = film.reason;
+    // 左栏封面之下补一份可核对的作品档案；没有的字段整行隐藏，不留空壳。
+    const archive = $('#detailArchive');
+    if (archive) {
+      const values = {
+        author: film.author, runtime: film.runtime, source: sourceLabel,
+        kind: film.kind + ' / ' + categoryLabel,
+        published: film.published.replace(/-/g, '.'),
+        score: film.score === null ? '待评' : film.score.toFixed(1) + ' / 10'
+      };
+      archive.querySelectorAll('[data-archive-row]').forEach((row) => {
+        const value = values[row.dataset.archiveRow] || '';
+        row.hidden = !value;
+        const dd = row.querySelector('dd');
+        if (dd) dd.textContent = value;
+      });
+      archive.hidden = false;
+    }
     // 详情图优先换 1280w 大图（列表缩略图只有 640w，放大发虚）；没有大图的片就留缩略图。
     // 预载成功才换 src，避免加载期间闪空白；缩略图的宽高属性让浏览器按原比例占位，不跳版。
     const detailImage = $('#detailImage');

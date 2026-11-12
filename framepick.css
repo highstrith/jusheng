@@ -195,7 +195,14 @@ dialog::backdrop { background:rgba(0,0,0,.8) }
    右栏比封面高时下面会留一块——用同一张图放大模糊垫在背后，比一整块死黑像是有意为之。 */
 .detail-cover { position:relative;background:#0b0d10;overflow:hidden;align-self:stretch }
 /* 封面比右栏矮时，下半幅用同一张图垫底；但只能是很暗的底纹，不能是一整块亮色。 */
-.detail-cover::before { content:"";position:absolute;inset:-40px;background-image:var(--cover,none);background-size:cover;background-position:center;filter:blur(56px) saturate(.5) brightness(.5);opacity:.9;transform:scale(1.08);pointer-events:none }
+.detail-cover::before { content:"";position:absolute;inset:-40px;background-image:var(--cover,none);background-size:cover;background-position:center;filter:blur(14px) saturate(.75) brightness(.5);opacity:.9;transform:scale(1.08);pointer-events:none }
+/* 封面之下的空白改放「作品档案」：同图垫底只做背景，字必须能读清。 */
+.detail-archive { position:relative;z-index:2;margin:20px 22px 0;padding:0;color:#dededa;font-size:12px;line-height:1.7 }
+.detail-archive[hidden],.detail-archive>div[hidden]{display:none}
+.detail-archive .archive-title { color:#c9a97a;font-size:11px;font-weight:400;letter-spacing:.08em;padding-bottom:8px;margin:0 }
+.detail-archive>div { display:flex;justify-content:space-between;align-items:baseline;gap:14px;border-top:1px solid #ffffff1f;padding:8px 0 }
+.detail-archive dt { color:#9a9a94;font-size:11px;flex:none }
+.detail-archive dd { margin:0;text-align:right;min-width:0;overflow-wrap:anywhere }
 .detail-cover img { position:relative;display:block;width:100%;height:auto }.detail-cover>span { position:absolute;z-index:1;bottom:0;left:0;right:0;padding:25px 15px 12px;color:#dededa;font-size:11px;background:linear-gradient(transparent,#0009) }
 .detail-copy { padding:42px 35px 35px }.detail-copy h2 { font:400 40px/1.3 var(--serif);margin:10px 0 13px }.detail-author,.detail-episode,.detail-status,.detail-published { color:var(--muted);font-size:11px }.detail-status{margin-top:2px;letter-spacing:.02em}.detail-published[hidden]{display:none}.detail-published{margin-top:2px;letter-spacing:.02em}
 #detailDescription { color:var(--body);font-size:13px;line-height:1.95;margin-top:22px }.detail-reason { border-left:2px solid #c9a97a77;padding-left:14px;margin:23px 0 }.detail-reason h3 { font-size:11px;font-weight:500;color:var(--gold);margin-bottom:7px }.detail-reason p { font-size:12px;color:var(--body);line-height:1.9 }
@@ -280,7 +287,7 @@ dialog::backdrop { background:rgba(0,0,0,.8) }
 .review-item { padding:15px 0;border-bottom:1px solid var(--line);overflow-wrap:anywhere }.review-item h4 { margin:0 0 4px;font-size:12px;font-weight:500 }.review-meta { font-size:11px;color:var(--muted);margin-bottom:8px }.review-body { color:var(--body);font-size:12px;line-height:1.85;white-space:pre-wrap }
 .review-edit,.review-retry { border:0;background:none;color:var(--gold);font-size:11px;padding:8px 0 }.review-item .review-edit { margin-top:4px }#reviewMore { margin-top:17px;font-size:12px }
 @media (max-width:1000px) { .bar-in { gap:20px } }
-@media (max-width:760px) { .bar-in { gap:12px }.detail-tabs { gap:20px }.detail-copy { padding:24px }.detail-cover { position:relative;height:auto } }
+@media (max-width:760px) { .bar-in { gap:12px }.detail-tabs { gap:20px }.detail-copy { padding:24px }.detail-cover { position:relative;height:auto }.detail-archive{display:none} }
 @media (max-width:520px) { .bar-in { flex-wrap:wrap;row-gap:8px;min-height:0;padding:10px 0 }.bar nav a[href="#membership"] { display:none }.bar nav { margin-left:auto }.saved-toggle { margin-left:0 }.account-entry { margin-left:0;padding:6px 8px;font-size:11px }.detail-tabs { justify-content:space-between;gap:9px }.detail-tabs button { font-size:11px }.review-input-row { grid-template-columns:minmax(0,1fr) 95px;gap:10px }#reviewForm input,#reviewForm textarea,#reviewForm select { font-size:16px;padding:8px }.detail-copy { padding:22px 19px } }
 
 /* Prototype honesty: every state that depends on an unbuilt service is labelled.
