@@ -2506,5 +2506,38 @@ window.FRAMEPICK_FILMS = [
     "relation": "",
     "intakeDate": "2026-11-12",
     "published": "2026-11-07"
+  },
+  {
+    "id": "haiguitang",
+    "title": "海龟汤：她回来了",
+    "kind": "悬疑",
+    "genres": [
+      "thriller"
+    ],
+    "category": "short",
+    "source": "bilibili",
+    "sourceLabel": "哔哩哔哩",
+    "access": "free",
+    "badge": "免费精选",
+    "runtime": "05:51",
+    "author": "鸡电清",
+    "description": "鸡电清创作的 AIGC 中式恐怖短片，全长 5 分 51 秒。原页以「海龟汤」谜面的形式给出设定：一个女人每天晚上都会给敲门的人开门；她死后，女儿回家守灵，第一晚听见敲门声，她没有开门，第二天她死了。原页把「为什么？」留给观众，正片即围绕这道谜面展开。",
+    "recommendation": "中式恐怖题材的 AIGC 短片，用一个封闭的「海龟汤」谜面收束，适合偏爱短小悬疑的观众。",
+    "cover": "img/haiguitang-640w.webp",
+    "coverWidth": 640,
+    "coverHeight": 360,
+    "coverAlt": "《海龟汤：她回来了》原片封面",
+    "coverNote": "原片封面",
+    "sourceUrl": "https://www.bilibili.com/video/BV1scW26aEck",
+    "watchLabel": "前往哔哩哔哩",
+    "score": null,
+    "scoreText": "待评",
+    "completion": "standalone",
+    "statusLabel": "单部",
+    "episode": "",
+    "volume": "",
+    "relation": "",
+    "intakeDate": "2026-11-12",
+    "published": "2026-11-11"
   }
 ];
