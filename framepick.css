@@ -195,7 +195,7 @@ dialog::backdrop { background:rgba(0,0,0,.8) }
    右栏比封面高时下面会留一块——用同一张图放大模糊垫在背后，比一整块死黑像是有意为之。 */
 .detail-cover { position:relative;background:#0b0d10;overflow:hidden;align-self:stretch }
 /* 封面比右栏矮时，下半幅用同一张图垫底；但只能是很暗的底纹，不能是一整块亮色。 */
-.detail-cover::before { content:"";position:absolute;inset:-40px;background-image:var(--cover,none);background-size:cover;background-position:center;filter:blur(56px) saturate(.5) brightness(.26);opacity:.9;transform:scale(1.08);pointer-events:none }
+.detail-cover::before { content:"";position:absolute;inset:-40px;background-image:var(--cover,none);background-size:cover;background-position:center;filter:blur(56px) saturate(.5) brightness(.5);opacity:.9;transform:scale(1.08);pointer-events:none }
 .detail-cover img { position:relative;display:block;width:100%;height:auto }.detail-cover>span { position:absolute;z-index:1;bottom:0;left:0;right:0;padding:25px 15px 12px;color:#dededa;font-size:11px;background:linear-gradient(transparent,#0009) }
 .detail-copy { padding:42px 35px 35px }.detail-copy h2 { font:400 40px/1.3 var(--serif);margin:10px 0 13px }.detail-author,.detail-episode,.detail-status,.detail-published { color:var(--muted);font-size:11px }.detail-status{margin-top:2px;letter-spacing:.02em}.detail-published[hidden]{display:none}.detail-published{margin-top:2px;letter-spacing:.02em}
 #detailDescription { color:var(--body);font-size:13px;line-height:1.95;margin-top:22px }.detail-reason { border-left:2px solid #c9a97a77;padding-left:14px;margin:23px 0 }.detail-reason h3 { font-size:11px;font-weight:500;color:var(--gold);margin-bottom:7px }.detail-reason p { font-size:12px;color:var(--body);line-height:1.9 }
