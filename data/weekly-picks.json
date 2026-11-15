@@ -117,6 +117,65 @@
         }
       ],
       "candidateCount": 25
+    },
+    {
+      "week": "2026-W47",
+      "isoYear": 2026,
+      "isoWeek": 47,
+      "displayStart": "2026-11-16",
+      "displayEnd": "2026-11-22",
+      "start": "2026-11-09",
+      "end": "2026-11-15",
+      "films": [
+        {
+          "id": "zuihoudezashuashi",
+          "title": "最后的杂耍师",
+          "releaseDate": "2026-11-15",
+          "source": "bilibili",
+          "runtime": "11:24",
+          "cover": "img/zuihoudezashuashi-640w.webp"
+        },
+        {
+          "id": "yuyan",
+          "title": "鱼眼",
+          "releaseDate": "2026-11-15",
+          "source": "bilibili",
+          "runtime": "14:12",
+          "cover": "img/yuyan-640w.webp"
+        },
+        {
+          "id": "guitu",
+          "title": "归途",
+          "releaseDate": "2026-11-15",
+          "source": "bilibili",
+          "runtime": "18:52",
+          "cover": "img/guitu-640w.webp"
+        },
+        {
+          "id": "noua",
+          "title": "Noua",
+          "releaseDate": "2026-11-15",
+          "source": "bilibili",
+          "runtime": "09:36",
+          "cover": "img/noua-640w.webp"
+        },
+        {
+          "id": "zuihoudefangxian",
+          "title": "最后的防线",
+          "releaseDate": "2026-11-15",
+          "source": "bilibili",
+          "runtime": "11:22",
+          "cover": "img/zuihoudefangxian-640w.webp"
+        }
+      ],
+      "supplement": [
+        {
+          "id": "haiyaoqieyan",
+          "title": "海妖：窃颜之妻",
+          "releaseDate": "2026-10-17"
+        }
+      ],
+      "candidateCount": 24
     }
   ]
 }
