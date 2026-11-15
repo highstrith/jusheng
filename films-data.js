@@ -2906,5 +2906,38 @@ window.FRAMEPICK_FILMS = [
     "relation": "",
     "intakeDate": "2026-11-15",
     "published": "2026-11-14"
+  },
+  {
+    "id": "haiyaoqieyan",
+    "title": "海妖：窃颜之妻",
+    "kind": "奇幻",
+    "genres": [
+      "fantasy"
+    ],
+    "category": "short",
+    "source": "bilibili",
+    "sourceLabel": "哔哩哔哩",
+    "access": "free",
+    "badge": "免费精选",
+    "runtime": "12:21",
+    "author": "未竟AIGC",
+    "description": "未竟AIGC 的原创 AI 暗黑奇幻短片，片长 12:21。原页简介：她靠夺取别人的青春，维持着自己美丽的容貌；他发现真相后，却依然把她护在身后，只求她答应一句「再也不要伤害别人」。原页把「一句承诺能不能抵过她对青春的渴望」留给观众。原页标签为 AI 原创、AIGC、暗黑奇幻、人性。",
+    "recommendation": "偷来的美貌与一句承诺摆在同一张桌上，暗黑奇幻的壳子里讲的是共犯式的包庇。",
+    "cover": "img/haiyaoqieyan-640w.webp",
+    "coverWidth": 640,
+    "coverHeight": 360,
+    "coverAlt": "《海妖：窃颜之妻》原片封面",
+    "coverNote": "原片封面",
+    "sourceUrl": "https://www.bilibili.com/video/BV1zdJv6nEWp",
+    "watchLabel": "前往哔哩哔哩",
+    "score": null,
+    "scoreText": "待评",
+    "completion": "standalone",
+    "statusLabel": "单部",
+    "episode": "",
+    "volume": "",
+    "relation": "",
+    "intakeDate": "2026-11-15",
+    "published": "2026-10-17"
   }
 ];
