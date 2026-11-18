@@ -3374,5 +3374,39 @@ window.FRAMEPICK_FILMS = [
     "relation": "",
     "intakeDate": "2026-11-18",
     "published": "2026-10-03"
+  },
+  {
+    "id": "wozaimiguokaizongmen",
+    "title": "我在米国开宗门",
+    "kind": "仙侠 / 都市",
+    "genres": [
+      "xianxia",
+      "urban"
+    ],
+    "category": "series",
+    "source": "bilibili",
+    "sourceLabel": "哔哩哔哩",
+    "access": "free",
+    "badge": "免费精选",
+    "runtime": "08:35",
+    "author": "爱神北海",
+    "description": "作者爱神北海在简介里自述本片「全程就是一个人加一台电脑」完成，画面由 AI 视频生成与图片生成工具制作，片中角色资产与音色资产均为 AI 文生，并声明未使用真人图像与音频。本集是系列第 01 集：小伙坠入合欢浴池，偶然间来到米国，一番闹腾之后开始他在异国他乡的宗门建设。原页标签：原创、奇幻、修仙、AI电影、AI短片。",
+    "recommendation": "一个人一台电脑做出来的修仙题材 AI 短剧开篇，把宗门搬到海外背景，适合想看 AI 系列剧怎么起头的观众。",
+    "cover": "img/wozaimiguokaizongmen-640w.webp",
+    "coverWidth": 640,
+    "coverHeight": 360,
+    "coverAlt": "《我在米国开宗门》原片封面",
+    "coverNote": "原片封面",
+    "sourceUrl": "https://www.bilibili.com/video/BV19p4Y6SEWE",
+    "watchLabel": "前往哔哩哔哩",
+    "score": null,
+    "scoreText": "待评",
+    "completion": "ongoing",
+    "statusLabel": "连载中",
+    "episode": "第 01 集",
+    "volume": "",
+    "relation": "",
+    "intakeDate": "2026-11-18",
+    "published": "2026-11-06"
   }
 ];
