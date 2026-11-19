@@ -141,7 +141,7 @@ if [ "$PUSHED" = "1" ]; then
       | python3 -c "import json,sys; d=json.loads(sys.stdin.read(),strict=False)['workflow_runs'][0]; print(d['status'], d['conclusion'])" 2>/dev/null || true)
     echo "  部署：${STATUS:-检查中}"
     case "$STATUS" in
-      *failure*) fail "部署失败（$STATUS）。到 Actions 看日志；若是 github-pages 产物报错，别点 Re-run failed jobs，直接 Run workflow 新开一次运行" ;;
+      *failure*) fail "部署失败（${STATUS}）。到 Actions 看日志；若是 github-pages 产物报错，别点 Re-run failed jobs，直接 Run workflow 新开一次运行" ;;
     esac
   done
   case "$LEVEL" in
