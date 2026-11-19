@@ -3408,5 +3408,39 @@ window.FRAMEPICK_FILMS = [
     "relation": "",
     "intakeDate": "2026-11-18",
     "published": "2026-11-06"
+  },
+  {
+    "id": "thelastoutlaw",
+    "title": "The Last Outlaw",
+    "kind": "科幻 / 悬疑",
+    "genres": [
+      "scifi",
+      "thriller"
+    ],
+    "category": "short",
+    "source": "bilibili",
+    "sourceLabel": "哔哩哔哩",
+    "access": "free",
+    "badge": "免费精选",
+    "runtime": "14:07",
+    "author": "Aiworlddream",
+    "description": "Aiworlddream 制作的英文科幻西部短片，原页标注为 AI 短片（标签 AIShortFilm）。据原页简介：故事发生在一个危险潜伏于每颗星球背后的无法无天的星系，一名赏金猎人接下了他迄今最凶险的一单；他穿过尘土飞扬的外星荒漠、被废弃的前哨站与冷酷的边境小镇，生存本身就要付出代价。当这场猎杀变成私人恩怨，猎人必须面对自己的过去，并决定为最终报酬能走到哪一步。原页称片中包含未来枪手、太空亡命徒、正面对决与电影化动作场面，并在结尾安排了一次反转。",
+    "recommendation": "科幻与西部混搭的 AI 短片，异星荒漠、赏金猎人与边境小镇对峙，适合看太空西部类型片的观众。",
+    "cover": "img/thelastoutlaw-640w.webp",
+    "coverWidth": 640,
+    "coverHeight": 360,
+    "coverAlt": "《The Last Outlaw》原片封面",
+    "coverNote": "原片封面",
+    "sourceUrl": "https://www.bilibili.com/video/BV1rssk6pET5",
+    "watchLabel": "前往哔哩哔哩",
+    "score": null,
+    "scoreText": "待评",
+    "completion": "standalone",
+    "statusLabel": "单部",
+    "episode": "",
+    "volume": "",
+    "relation": "",
+    "intakeDate": "2026-11-19",
+    "published": "2026-11-18"
   }
 ];
