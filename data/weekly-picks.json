@@ -176,6 +176,65 @@
         }
       ],
       "candidateCount": 26
+    },
+    {
+      "week": "2026-W48",
+      "isoYear": 2026,
+      "isoWeek": 48,
+      "displayStart": "2026-11-23",
+      "displayEnd": "2026-11-29",
+      "start": "2026-11-16",
+      "end": "2026-11-22",
+      "films": [
+        {
+          "id": "thehunt",
+          "title": "THE HUNT",
+          "releaseDate": "2026-11-22",
+          "source": "bilibili",
+          "runtime": "39:48",
+          "cover": "img/thehunt-640w.webp"
+        },
+        {
+          "id": "me2",
+          "title": "ME2",
+          "releaseDate": "2026-11-22",
+          "source": "bilibili",
+          "runtime": "09:54",
+          "cover": "img/me2-640w.webp"
+        },
+        {
+          "id": "shieryouji",
+          "title": "十二游记",
+          "releaseDate": "2026-11-21",
+          "source": "bilibili",
+          "runtime": "09:16",
+          "cover": "img/shieryouji-640w.webp"
+        },
+        {
+          "id": "yonghengzhe",
+          "title": "永恒者",
+          "releaseDate": "2026-11-21",
+          "source": "bilibili",
+          "runtime": "08:11",
+          "cover": "img/yonghengzhe-640w.webp"
+        },
+        {
+          "id": "yinguodinglun",
+          "title": "因果定论：矩阵边界线",
+          "releaseDate": "2026-11-21",
+          "source": "bilibili",
+          "runtime": "24:51",
+          "cover": "img/yinguodinglun-640w.webp"
+        }
+      ],
+      "supplement": [
+        {
+          "id": "fenggu",
+          "title": "凤姑",
+          "releaseDate": "2026-10-28"
+        }
+      ],
+      "candidateCount": 17
     }
   ]
 }
